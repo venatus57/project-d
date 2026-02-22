@@ -232,7 +232,7 @@ export default function RunPage() {
             localStorage.setItem("projectd_ghosts", JSON.stringify(ghosts));
 
             // Redirect to ghosts page
-            router.push(`/ghosts/${ghostRun.id}`);
+            router.push(`/ghosts/detail?id=${ghostRun.id}`);
         }
     };
 
@@ -284,8 +284,8 @@ export default function RunPage() {
                                         key={car.id}
                                         onClick={() => setSelectedCar(car)}
                                         className={`p-4 border rounded text-left transition-colors ${selectedCar?.id === car.id
-                                                ? "bg-yellow-500/20 border-yellow-500"
-                                                : "bg-zinc-900 border-zinc-700 hover:border-zinc-500"
+                                            ? "bg-yellow-500/20 border-yellow-500"
+                                            : "bg-zinc-900 border-zinc-700 hover:border-zinc-500"
                                             }`}
                                     >
                                         <div className="font-bold">{car.name}</div>
@@ -317,8 +317,8 @@ export default function RunPage() {
                                         key={touge.id}
                                         onClick={() => setSelectedTouge(touge)}
                                         className={`w-full p-4 border rounded text-left transition-colors ${selectedTouge?.id === touge.id
-                                                ? "bg-yellow-500/20 border-yellow-500"
-                                                : "bg-zinc-900 border-zinc-700 hover:border-zinc-500"
+                                            ? "bg-yellow-500/20 border-yellow-500"
+                                            : "bg-zinc-900 border-zinc-700 hover:border-zinc-500"
                                             }`}
                                     >
                                         <div className="font-bold">{touge.name}</div>
@@ -340,8 +340,8 @@ export default function RunPage() {
                                     key={weather}
                                     onClick={() => setSelectedWeather(weather)}
                                     className={`p-4 border rounded text-center transition-colors ${selectedWeather === weather
-                                            ? `bg-opacity-20 border-2 ${WEATHER_INFO[weather].color}`
-                                            : "bg-zinc-900 border-zinc-700 hover:border-zinc-500"
+                                        ? `bg-opacity-20 border-2 ${WEATHER_INFO[weather].color}`
+                                        : "bg-zinc-900 border-zinc-700 hover:border-zinc-500"
                                         }`}
                                 >
                                     <div className="text-3xl mb-1">{WEATHER_INFO[weather].icon}</div>

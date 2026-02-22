@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
@@ -90,7 +90,7 @@ export default function GhostDetailClient({ id }: GhostDetailClientProps) {
     if (!ghost) {
         return (
             <div className="min-h-screen bg-zinc-950 text-zinc-100 flex items-center justify-center">
-                <div className="text-zinc-500">Ghost non trouvé...</div>
+                <div className="text-zinc-500">Ghost non trouv├®...</div>
             </div>
         );
     }
@@ -130,7 +130,7 @@ export default function GhostDetailClient({ id }: GhostDetailClientProps) {
                                     GHOST REPLAY
                                 </h1>
                                 <div className="text-zinc-500 text-sm">
-                                    {ghost.driverName} • {ghost.date}
+                                    {ghost.driverName} ÔÇó {ghost.date}
                                 </div>
                             </div>
                         </div>

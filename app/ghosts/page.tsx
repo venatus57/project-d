@@ -114,9 +114,9 @@ export default function GhostsPage() {
                                             <div className="flex items-center gap-4">
                                                 {/* Rank */}
                                                 <div className={`w-10 h-10 flex items-center justify-center font-bold text-lg rounded ${index === 0 ? "bg-yellow-500 text-black" :
-                                                        index === 1 ? "bg-zinc-400 text-black" :
-                                                            index === 2 ? "bg-orange-600 text-white" :
-                                                                "bg-zinc-800 text-zinc-400"
+                                                    index === 1 ? "bg-zinc-400 text-black" :
+                                                        index === 2 ? "bg-orange-600 text-white" :
+                                                            "bg-zinc-800 text-zinc-400"
                                                     }`}>
                                                     #{index + 1}
                                                 </div>
@@ -157,7 +157,7 @@ export default function GhostsPage() {
                                                 {/* Actions */}
                                                 <div className="flex gap-2">
                                                     <Link
-                                                        href={`/ghosts/${ghost.id}`}
+                                                        href={`/ghosts/detail?id=${ghost.id}`}
                                                         className="px-4 py-2 bg-yellow-500 text-black font-bold text-sm hover:bg-yellow-400 transition-colors rounded flex items-center gap-1"
                                                     >
                                                         <Play size={14} />

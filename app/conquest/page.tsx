@@ -69,7 +69,7 @@ export default function ConquestPage() {
                             className="bg-zinc-900/50 border border-zinc-800 hover:border-yellow-500/50 transition-colors group"
                         >
                             {/* Clickable preview area */}
-                            <Link href={`/conquest/${route.id}`} className="block">
+                            <Link href={`/conquest/detail?id=${route.id}`} className="block">
                                 {/* Mini Map Preview Placeholder */}
                                 <div className="h-32 bg-zinc-800 relative overflow-hidden cursor-pointer">
                                     <div className="absolute inset-0 flex items-center justify-center">
@@ -98,7 +98,7 @@ export default function ConquestPage() {
                             </Link>
 
                             <div className="p-4">
-                                <Link href={`/conquest/${route.id}`}>
+                                <Link href={`/conquest/detail?id=${route.id}`}>
                                     <h3 className="text-lg font-bold text-zinc-100 mb-2 hover:text-yellow-500 transition-colors cursor-pointer">
                                         {route.name}
                                     </h3>
@@ -121,7 +121,7 @@ export default function ConquestPage() {
 
                                 <div className="flex gap-2">
                                     <Link
-                                        href={`/conquest/${route.id}`}
+                                        href={`/conquest/detail?id=${route.id}`}
                                         className="flex-1 bg-yellow-500 text-black hover:bg-yellow-400 text-center py-2 text-sm font-bold transition-colors"
                                     >
                                         VOIR
