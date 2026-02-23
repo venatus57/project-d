@@ -52,8 +52,9 @@ body {
 }
 
 /* Base Night Runners Utilities */
-.glitch-hover:hover {
-  text-shadow: 2px 0 var(--color-toxic-magenta), -2px 0 var(--color-toxic-cyan);
+.glitch-hover:hover,
+.group:hover .glitch-hover {
+  text-shadow: 1px 1px 0 rgba(255, 0, 255, 0.6), -1px -1px 0 rgba(0, 255, 255, 0.6);
   transform: skewX(-2deg);
 }
 
