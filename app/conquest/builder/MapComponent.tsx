@@ -61,7 +61,7 @@ export default function MapComponent({
         >
             {/* Dark Matter Tile Layer */}
             <TileLayer
-                attribution='&copy; <a href="https://carto.com/">CARTO</a>'
+                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
                 url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
             />
 

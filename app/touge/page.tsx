@@ -22,10 +22,10 @@ type TougeCircuit = {
 };
 
 const difficultyColors = {
-    EASY: "text-green-500 border-green-500/30 bg-green-500/10",
-    MEDIUM: "text-blue-500 border-blue-500/30 bg-blue-500/10",
-    HARD: "text-orange-500 border-orange-500/30 bg-orange-500/10",
-    LEGENDARY: "text-yellow-500 border-yellow-500/30 bg-yellow-500/10",
+    EASY: "text-toxic-green border-toxic-green bg-toxic-green/10",
+    MEDIUM: "text-toxic-cyan border-toxic-cyan bg-toxic-cyan/10",
+    HARD: "text-toxic-magenta border-toxic-magenta bg-toxic-magenta/10",
+    LEGENDARY: "text-toxic-yellow border-toxic-yellow bg-toxic-yellow/10 animate-pulse",
 };
 
 // Storage key matching the Route Builder
@@ -82,20 +82,20 @@ export default function TougePage() {
     );
 
     return (
-        <div className="min-h-screen bg-zinc-950 text-zinc-100 p-8 font-mono">
+        <div className="min-h-screen bg-black text-zinc-100 p-8 font-pixel">
 
             {/* HEADER */}
-            <header className="mb-8 border-b border-zinc-800 pb-4">
-                <h1 className="text-4xl font-bold italic tracking-tighter text-yellow-500">
+            <header className="mb-8 border-b-2 border-zinc-800 pb-4">
+                <h1 className="text-4xl font-bold italic tracking-tighter text-toxic-magenta glitch-hover text-shadow-neon">
                     PROJECT D // TOUGE
                 </h1>
-                <p className="text-zinc-500 mt-2">TES TRACÉS PERSONNELS</p>
+                <p className="text-zinc-500 mt-2 font-bold tracking-widest">TES TRACÉS PERSONNELS</p>
             </header>
 
             {/* CREATE NEW BUTTON */}
             <Link
                 href="/conquest/builder"
-                className="inline-flex items-center gap-3 bg-green-500 text-black hover:bg-green-400 px-6 py-3 font-bold transition-colors mb-8"
+                className="inline-flex items-center gap-3 bg-toxic-green text-black hover:bg-white px-6 py-3 font-bold transition-colors mb-8 hard-border shadow-[0_0_15px_rgba(0,255,65,0.4)]"
             >
                 <Plus size={20} />
                 CRÉER UN NOUVEAU TOUGE (GPS)
@@ -103,14 +103,14 @@ export default function TougePage() {
 
             {/* FILTER - Region (only show if there are routes) */}
             {availableRegions.length > 0 && (
-                <div className="flex items-center gap-3 mb-8">
-                    <span className="text-zinc-500 text-xs">RÉGION</span>
+                <div className="flex items-center gap-3 mb-8 bg-zinc-950 border-2 border-zinc-800 p-2 hard-border w-max">
+                    <span className="text-zinc-500 text-xs font-bold px-2">RÉGION</span>
                     <div className="flex flex-wrap gap-2">
                         <button
                             onClick={() => setRegionFilter("ALL")}
-                            className={`px-3 py-1.5 text-xs font-bold transition-colors rounded ${regionFilter === "ALL"
-                                ? "bg-yellow-500 text-black"
-                                : "bg-zinc-800 text-zinc-400 hover:bg-zinc-700"
+                            className={`px-4 py-1.5 text-xs font-bold transition-colors hard-border border-2 ${regionFilter === "ALL"
+                                ? "bg-toxic-cyan border-toxic-cyan text-black"
+                                : "bg-black border-zinc-800 text-zinc-400 hover:border-zinc-500"
                                 }`}
                         >
                             TOUS
@@ -119,9 +119,9 @@ export default function TougePage() {
                             <button
                                 key={region}
                                 onClick={() => setRegionFilter(region)}
-                                className={`px-3 py-1.5 text-xs font-bold transition-colors rounded ${regionFilter === region
-                                    ? "bg-yellow-500 text-black"
-                                    : "bg-zinc-800 text-zinc-400 hover:bg-zinc-700"
+                                className={`px-4 py-1.5 text-xs font-bold transition-colors hard-border border-2 uppercase ${regionFilter === region
+                                    ? "bg-toxic-cyan border-toxic-cyan text-black"
+                                    : "bg-black border-zinc-800 text-zinc-400 hover:border-zinc-500"
                                     }`}
                             >
                                 {region}
@@ -133,18 +133,18 @@ export default function TougePage() {
 
             {/* EMPTY STATE */}
             {circuits.length === 0 ? (
-                <div className="text-center py-16 border-2 border-dashed border-zinc-800 rounded-lg">
+                <div className="text-center py-16 border-2 border-dashed border-zinc-800 hard-border bg-zinc-950/50">
                     <Route size={48} className="mx-auto text-zinc-700 mb-4" />
-                    <h2 className="text-xl font-bold text-zinc-400 mb-2">Aucun touge enregistré</h2>
-                    <p className="text-zinc-600 mb-6 max-w-md mx-auto">
+                    <h2 className="text-xl font-bold text-zinc-400 mb-2 uppercase">Aucun touge enregistré</h2>
+                    <p className="text-zinc-600 mb-6 max-w-md mx-auto font-bold tracking-wide">
                         Crée ton premier touge en utilisant le mode GPS ! Roule sur ta route préférée et le site enregistrera ton tracé en temps réel.
                     </p>
                     <Link
                         href="/conquest/builder"
-                        className="inline-flex items-center gap-2 bg-green-500 text-black hover:bg-green-400 px-6 py-3 font-bold transition-colors"
+                        className="inline-flex items-center gap-2 bg-toxic-green text-black hover:bg-white px-6 py-3 font-bold transition-colors hard-border shadow-[0_0_15px_rgba(0,255,65,0.4)]"
                     >
                         <Plus size={20} />
-                        CRÉER MON PREMIER TOUGE
+                        CREATE FIRST ROUTE
                     </Link>
                 </div>
             ) : (
@@ -158,9 +158,9 @@ export default function TougePage() {
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ delay: index * 0.05 }}
                                 className={`
-                                    bg-zinc-900/50 border border-zinc-800
-                                    hover:border-yellow-500/50 transition-all duration-300
-                                    ${selectedId === circuit.id ? "border-yellow-500" : ""}
+                                    bg-zinc-950 border-2 border-zinc-800 hard-border
+                                    hover:border-toxic-cyan transition-all duration-300
+                                    ${selectedId === circuit.id ? "border-toxic-cyan bg-[#050510]" : ""}
                                 `}
                             >
                                 {/* Main Info - Clickable Header */}
@@ -170,10 +170,10 @@ export default function TougePage() {
                                 >
                                     <div className="flex justify-between items-center">
                                         <div className="flex items-center gap-4">
-                                            <span className="text-zinc-600 text-xs w-8">#{String(index + 1).padStart(2, "0")}</span>
+                                            <span className="text-zinc-600 text-xs w-8 font-bold">#{String(index + 1).padStart(2, "0")}</span>
                                             <div>
-                                                <h3 className="text-xl font-bold text-zinc-100">{circuit.name}</h3>
-                                                <div className="flex items-center gap-1 text-zinc-500 text-sm mt-1">
+                                                <h3 className="text-2xl font-bold text-white uppercase tracking-wider">{circuit.name}</h3>
+                                                <div className="flex items-center gap-1 text-zinc-500 text-xs font-bold mt-1 uppercase">
                                                     <MapPin size={12} />
                                                     <span>{circuit.location}</span>
                                                 </div>
@@ -182,16 +182,16 @@ export default function TougePage() {
 
                                         <div className="flex items-center gap-6">
                                             {/* Length */}
-                                            <div className="hidden md:flex items-center gap-2 text-zinc-500 text-sm">
+                                            <div className="hidden md:flex items-center gap-2 text-zinc-400 font-bold text-sm">
                                                 <Route size={14} />
                                                 <span>{circuit.length}</span>
                                             </div>
 
                                             {/* Difficulty Badge */}
                                             <span className={`
-                                                px-2 py-1 text-xs font-bold border
+                                                px-3 py-1 text-xs font-bold border-2 hard-border shadow-[0_0_10px_currentColor]
                                                 ${difficultyColors[circuit.difficulty]}
-                                            `}>
+                                            `} style={{ opacity: 0.8 }}>
                                                 {circuit.difficulty}
                                             </span>
 
@@ -200,7 +200,7 @@ export default function TougePage() {
                                                 size={20}
                                                 className={`
                                                     text-zinc-600 transition-transform duration-300
-                                                    ${selectedId === circuit.id ? "rotate-90 text-yellow-500" : ""}
+                                                    ${selectedId === circuit.id ? "rotate-90 text-toxic-cyan" : ""}
                                                 `}
                                             />
                                         </div>
@@ -214,31 +214,31 @@ export default function TougePage() {
                                         animate={{ opacity: 1, height: "auto" }}
                                         className="px-4 pb-4 pt-0"
                                     >
-                                        <div className="border-t border-zinc-800 pt-4">
+                                        <div className="border-t-2 border-zinc-800 pt-4 mt-2">
                                             {/* Description */}
-                                            <p className="text-zinc-400 text-sm mb-4">{circuit.description}</p>
+                                            <p className="text-zinc-400 text-sm mb-4 font-bold tracking-wide">{circuit.description}</p>
 
                                             {/* Stats Row */}
-                                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-                                                <div className="bg-zinc-800/50 p-3 rounded">
-                                                    <div className="text-zinc-500 text-xs">Longueur</div>
-                                                    <div className="text-zinc-100 font-bold">{circuit.length}</div>
+                                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                                                <div className="bg-black border-2 border-zinc-800 p-3 hard-border">
+                                                    <div className="text-zinc-500 text-[10px] font-bold tracking-widest uppercase">Longueur</div>
+                                                    <div className="text-white font-bold text-lg">{circuit.length}</div>
                                                 </div>
-                                                <div className="bg-zinc-800/50 p-3 rounded">
-                                                    <div className="text-zinc-500 text-xs">Points GPS</div>
-                                                    <div className="text-zinc-100 font-bold">{circuit.routePoints.length}</div>
+                                                <div className="bg-black border-2 border-zinc-800 p-3 hard-border">
+                                                    <div className="text-zinc-500 text-[10px] font-bold tracking-widest uppercase">Points GPS</div>
+                                                    <div className="text-white font-bold text-lg">{circuit.routePoints.length}</div>
                                                 </div>
                                                 {circuit.record && (
-                                                    <div className="bg-zinc-800/50 p-3 rounded">
-                                                        <div className="text-zinc-500 text-xs flex items-center gap-1">
+                                                    <div className="bg-black border-2 border-zinc-800 p-3 hard-border">
+                                                        <div className="text-zinc-500 text-[10px] font-bold tracking-widest uppercase flex items-center gap-1">
                                                             <Clock size={10} /> Record
                                                         </div>
-                                                        <div className="text-yellow-500 font-bold">{circuit.record}</div>
+                                                        <div className="text-toxic-yellow font-bold text-lg">{circuit.record}</div>
                                                     </div>
                                                 )}
-                                                <div className="bg-zinc-800/50 p-3 rounded">
-                                                    <div className="text-zinc-500 text-xs">Difficulté</div>
-                                                    <div className={`font-bold ${difficultyColors[circuit.difficulty].split(" ")[0]}`}>
+                                                <div className="bg-black border-2 border-zinc-800 p-3 hard-border">
+                                                    <div className="text-zinc-500 text-[10px] font-bold tracking-widest uppercase">Difficulté</div>
+                                                    <div className={`font-bold text-lg ${difficultyColors[circuit.difficulty].split(" ")[0]}`}>
                                                         {circuit.difficulty}
                                                     </div>
                                                 </div>
@@ -247,10 +247,10 @@ export default function TougePage() {
                                             {/* View Route Button */}
                                             <Link
                                                 href={`/touge/${circuit.id}`}
-                                                className="inline-flex items-center gap-2 bg-yellow-500 text-black hover:bg-yellow-400 px-6 py-3 font-bold transition-colors"
+                                                className="inline-flex items-center gap-2 bg-toxic-cyan text-black hover:bg-white px-6 py-3 font-bold transition-colors hard-border w-full justify-center md:w-auto shadow-[0_0_15px_rgba(0,255,255,0.2)]"
                                             >
                                                 <Eye size={18} />
-                                                VOIR LE TRACÉ SUR LA CARTE
+                                                ACCESS GPS DATA
                                             </Link>
                                         </div>
                                     </motion.div>
@@ -260,14 +260,14 @@ export default function TougePage() {
                     </div>
 
                     {/* STATS FOOTER */}
-                    <div className="mt-12 pt-6 border-t border-zinc-800 flex flex-wrap gap-8 text-sm">
+                    <div className="mt-12 pt-6 border-t-2 border-zinc-800 flex flex-wrap gap-8 text-sm font-bold tracking-widest uppercase">
                         <div>
                             <span className="text-zinc-500">Total Tracés:</span>
-                            <span className="text-zinc-100 font-bold ml-2">{circuits.length}</span>
+                            <span className="text-white ml-2">{circuits.length}</span>
                         </div>
                         <div>
                             <span className="text-zinc-500">Distance Totale:</span>
-                            <span className="text-yellow-500 font-bold ml-2">
+                            <span className="text-toxic-cyan ml-2">
                                 {circuits.reduce((acc, c) => acc + c.lengthKm, 0).toFixed(1)} km
                             </span>
                         </div>

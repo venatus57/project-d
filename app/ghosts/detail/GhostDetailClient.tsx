@@ -15,8 +15,8 @@ import { GhostRun, WEATHER_INFO, LatLng } from "../../lib/types";
 const GhostReplayMap = dynamic(() => import("./GhostReplayMap"), {
     ssr: false,
     loading: () => (
-        <div className="w-full h-full bg-zinc-900 flex items-center justify-center">
-            <div className="text-zinc-500 font-mono animate-pulse">LOADING REPLAY...</div>
+        <div className="w-full h-full bg-black flex items-center justify-center font-pixel">
+            <div className="text-toxic-cyan text-xl animate-pulse glitch-hover">LOADING REPLAY...</div>
         </div>
     )
 });
@@ -89,8 +89,8 @@ export default function GhostDetailClient({ id }: GhostDetailClientProps) {
 
     if (!ghost) {
         return (
-            <div className="min-h-screen bg-zinc-950 text-zinc-100 flex items-center justify-center">
-                <div className="text-zinc-500">Ghost non trouv├®...</div>
+            <div className="min-h-screen bg-black text-red-500 flex items-center justify-center font-pixel uppercase tracking-widest text-xl">
+                <div className="animate-pulse">Ghost introuvable...</div>
             </div>
         );
     }
@@ -101,10 +101,10 @@ export default function GhostDetailClient({ id }: GhostDetailClientProps) {
     const progress = (currentIndex / (ghost.points.length - 1)) * 100;
 
     return (
-        <div className="h-screen w-full bg-zinc-950 relative overflow-hidden">
+        <div className="h-[100dvh] w-full bg-black relative overflow-hidden font-pixel">
 
             {/* Map (full screen) */}
-            <div className="absolute inset-0">
+            <div className="absolute inset-0 top-24 md:top-24 bottom-32 md:bottom-24">
                 <GhostReplayMap
                     ghostPath={ghostPath}
                     fullPath={ghost.points.map(p => [p.lat, p.lng] as LatLng)}
@@ -116,139 +116,140 @@ export default function GhostDetailClient({ id }: GhostDetailClientProps) {
             <motion.div
                 initial={{ y: -50, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
-                className="absolute top-4 left-4 right-4 z-[1000]"
+                className="absolute top-0 left-0 right-0 z-[1000]"
             >
-                <div className="bg-zinc-950/90 backdrop-blur-md border border-zinc-800 rounded p-4">
-                    <div className="flex items-center justify-between flex-wrap gap-4">
-                        <div className="flex items-center gap-4">
-                            <Link href="/ghosts" className="text-zinc-400 hover:text-yellow-500">
-                                <ArrowLeft size={24} />
+                <div className="bg-black/95 backdrop-blur-md border-b-2 border-zinc-800 p-3 md:p-4 shadow-[0_10px_30px_rgba(0,0,0,0.8)]">
+                    <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-2 md:gap-4 max-w-7xl mx-auto">
+
+                        <div className="flex items-center gap-3 w-full md:w-auto overflow-hidden">
+                            <Link href="/ghosts" className="text-zinc-500 hover:text-toxic-cyan transition-colors border-2 border-transparent hover:border-toxic-cyan p-1 hard-border shrink-0">
+                                <ArrowLeft size={20} />
                             </Link>
-                            <div>
-                                <h1 className="text-xl font-bold text-yellow-500 flex items-center gap-2">
-                                    <Trophy size={20} />
-                                    GHOST REPLAY
+                            <div className="truncate">
+                                <h1 className="text-lg md:text-xl font-bold text-toxic-yellow flex items-center gap-2 uppercase tracking-widest text-shadow-[0_0_10px_rgba(255,255,0,0.4)] glitch-hover">
+                                    <Trophy size={16} />
+                                    REPLAY
                                 </h1>
-                                <div className="text-zinc-500 text-sm">
-                                    {ghost.driverName} ÔÇó {ghost.date}
+                                <div className="text-zinc-500 text-[10px] md:text-xs uppercase tracking-widest truncate">
+                                    {ghost.driverName} • {ghost.date}
                                 </div>
                             </div>
                         </div>
 
-                        <div className="flex items-center gap-4 text-sm">
-                            <div className="flex items-center gap-2 text-zinc-400">
-                                <CarIcon size={16} />
-                                {ghost.carName}
+                        <div className="flex items-center justify-between w-full md:w-auto gap-4 text-[10px] md:text-xs font-bold tracking-widest uppercase border-t-2 md:border-t-0 border-zinc-800 pt-2 md:pt-0">
+                            <div className="flex items-center gap-2 text-toxic-cyan">
+                                <CarIcon size={14} />
+                                <span className="truncate max-w-[100px] md:max-w-none">{ghost.carName}</span>
                             </div>
-                            <div className="flex items-center gap-2 text-zinc-400">
-                                <MapPin size={16} />
-                                {ghost.tougeName}
+                            <div className="flex items-center gap-2 text-toxic-magenta">
+                                <MapPin size={14} />
+                                <span className="truncate max-w-[100px] md:max-w-none">{ghost.tougeName}</span>
                             </div>
-                            <div className="text-2xl">{WEATHER_INFO[ghost.weather].icon}</div>
+                            <div className="text-lg md:text-2xl">{WEATHER_INFO[ghost.weather].icon}</div>
                         </div>
                     </div>
                 </div>
             </motion.div>
 
-            {/* HUD - Timer Display */}
-            <div className="absolute top-24 left-1/2 -translate-x-1/2 z-[1000]">
-                <div className="bg-zinc-950/90 backdrop-blur-md border border-yellow-500 rounded-lg px-8 py-4 text-center">
-                    <div className="text-4xl font-bold text-yellow-500 font-mono">
+            {/* HUD - Data Overlays (Mobile absolute) */}
+            <div className="absolute top-28 md:top-32 left-4 right-4 flex justify-between pointer-events-none z-[1000]">
+                {/* Timer Display */}
+                <div className="bg-black/90 backdrop-blur-md border-2 border-toxic-yellow hard-border px-4 py-2 text-center shadow-[0_0_15px_rgba(255,255,0,0.3)] pointer-events-auto">
+                    <div className="text-2xl md:text-4xl font-bold text-toxic-yellow text-shadow-[0_0_10px_rgba(255,255,0,0.4)]">
                         {formatTime(currentPoint.timestamp)}
                     </div>
-                    <div className="text-zinc-500 text-xs mt-1">
+                    <div className="text-zinc-500 text-[10px] md:text-xs mt-1 uppercase tracking-widest">
                         / {formatTime(ghost.totalTime)}
                     </div>
                 </div>
-            </div>
 
-            {/* HUD - Speed Display */}
-            <motion.div
-                initial={{ x: 50, opacity: 0 }}
-                animate={{ x: 0, opacity: 1 }}
-                className="absolute top-40 right-4 z-[1000]"
-            >
-                <div className="bg-zinc-950/90 backdrop-blur-md border border-zinc-800 rounded p-4 text-center w-32">
-                    <Gauge size={20} className="mx-auto text-zinc-500 mb-1" />
-                    <div className="text-3xl font-bold text-green-500">
+                {/* Speed Display */}
+                <div className="bg-black/90 backdrop-blur-md border-2 border-zinc-800 hard-border p-2 md:p-4 text-center w-24 md:w-32 shadow-[0_0_15px_rgba(0,0,0,0.8)] pointer-events-auto">
+                    <Gauge size={16} className="mx-auto text-toxic-green mb-1" />
+                    <div className="text-xl md:text-3xl font-bold text-toxic-green text-shadow-[0_0_10px_rgba(0,255,65,0.4)]">
                         {(currentPoint.speed || 0).toFixed(0)}
                     </div>
-                    <div className="text-zinc-600 text-xs">km/h</div>
+                    <div className="text-zinc-500 text-[10px] md:text-xs uppercase tracking-widest">KM/H</div>
                 </div>
-            </motion.div>
+            </div>
 
             {/* HUD - Stats Panel */}
-            <motion.div
-                initial={{ x: -50, opacity: 0 }}
-                animate={{ x: 0, opacity: 1 }}
-                className="absolute top-40 left-4 z-[1000]"
-            >
-                <div className="bg-zinc-950/90 backdrop-blur-md border border-zinc-800 rounded p-4 space-y-3 w-40">
-                    <div className="text-center">
-                        <div className="text-2xl font-bold text-yellow-500">{ghost.maxSpeed.toFixed(0)}</div>
-                        <div className="text-zinc-600 text-xs">Vitesse Max</div>
+            <div className="absolute top-52 md:top-64 left-4 z-[1000] pointer-events-none hidden md:block">
+                <div className="bg-black/90 backdrop-blur-md border-2 border-zinc-800 hard-border p-4 space-y-3 w-40 shadow-[0_0_20px_rgba(0,0,0,0.8)] pointer-events-auto">
+                    <div className="text-center font-bold uppercase tracking-widest">
+                        <div className="text-xl text-toxic-yellow">{ghost.maxSpeed.toFixed(0)}</div>
+                        <div className="text-zinc-600 text-[10px]">VMAX (KM/H)</div>
                     </div>
-                    <div className="text-center border-t border-zinc-800 pt-3">
-                        <div className="text-xl font-bold text-blue-500">{ghost.avgSpeed.toFixed(0)}</div>
-                        <div className="text-zinc-600 text-xs">Moyenne km/h</div>
+                    <div className="text-center border-t-2 border-zinc-800 pt-3 font-bold uppercase tracking-widest">
+                        <div className="text-xl text-toxic-cyan">{ghost.avgSpeed.toFixed(0)}</div>
+                        <div className="text-zinc-600 text-[10px]">MOY (KM/H)</div>
                     </div>
-                    <div className="text-center border-t border-zinc-800 pt-3">
-                        <div className="text-xl font-bold text-green-500">{ghost.totalDistance.toFixed(2)}</div>
-                        <div className="text-zinc-600 text-xs">km parcourus</div>
+                    <div className="text-center border-t-2 border-zinc-800 pt-3 font-bold uppercase tracking-widest">
+                        <div className="text-xl text-toxic-magenta">{ghost.totalDistance.toFixed(2)}</div>
+                        <div className="text-zinc-600 text-[10px]">DISTANCE (KM)</div>
                     </div>
                 </div>
-            </motion.div>
+            </div>
 
             {/* HUD - Bottom Controls */}
             <motion.div
                 initial={{ y: 50, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
-                className="absolute bottom-8 left-1/2 -translate-x-1/2 z-[1000]"
+                className="absolute bottom-4 left-4 right-4 z-[1000]"
             >
-                <div className="bg-zinc-950/90 backdrop-blur-md border border-zinc-800 rounded-lg p-4 flex flex-col items-center gap-4">
+                <div className="bg-black/95 backdrop-blur-xl border-2 border-zinc-800 hard-border p-4 shadow-[0_10px_30px_rgba(0,0,0,0.8)] max-w-2xl mx-auto">
 
                     {/* Progress bar */}
-                    <div className="w-80">
-                        <div className="h-2 bg-zinc-800 rounded-full overflow-hidden">
+                    <div className="w-full mb-4 md:mb-6">
+                        <div className="h-4 bg-zinc-900 hard-border border border-zinc-800 overflow-hidden relative">
                             <div
-                                className="h-full bg-yellow-500 transition-all duration-100"
+                                className="h-full bg-toxic-yellow transition-all duration-100 shadow-[0_0_10px_rgba(255,255,0,0.8)] relative"
                                 style={{ width: `${progress}%` }}
-                            />
+                            >
+                            </div>
                         </div>
                     </div>
 
-                    {/* Controls */}
-                    <div className="flex items-center gap-4">
-                        <button
-                            onClick={restart}
-                            className="p-3 bg-zinc-800 hover:bg-zinc-700 rounded-lg transition-colors"
-                        >
-                            <RotateCcw size={20} />
-                        </button>
+                    {/* Controls Row */}
+                    <div className="flex flex-col md:flex-row items-center justify-between gap-4">
 
-                        <button
-                            onClick={togglePlay}
-                            className="p-4 bg-yellow-500 text-black hover:bg-yellow-400 rounded-lg transition-colors"
-                        >
-                            {isPlaying ? <Pause size={28} /> : <Play size={28} />}
-                        </button>
+                        <div className="flex items-center gap-4 w-full md:w-auto">
+                            <button
+                                onClick={restart}
+                                className="flex-1 md:flex-none p-3 md:p-4 bg-black border-2 border-zinc-800 text-zinc-500 hover:text-white hover:border-white hard-border transition-colors flex justify-center items-center"
+                            >
+                                <RotateCcw size={20} />
+                            </button>
+
+                            <button
+                                onClick={togglePlay}
+                                className="flex-[2] md:flex-none p-3 md:p-4 bg-toxic-yellow border-2 border-toxic-yellow text-black hover:bg-white hover:text-black hover:border-white hard-border transition-colors shadow-[0_0_15px_rgba(255,255,0,0.4)] glitch-hover flex justify-center items-center gap-2 font-bold uppercase tracking-widest"
+                            >
+                                {isPlaying ? (
+                                    <><Pause size={24} /> <span className="hidden md:inline">PAUSE</span></>
+                                ) : (
+                                    <><Play size={24} /> <span className="hidden md:inline">PLAY</span></>
+                                )}
+                            </button>
+                        </div>
 
                         {/* Speed selector */}
-                        <div className="flex gap-1">
-                            {[0.5, 1, 2, 4].map(speed => (
+                        <div className="flex w-full md:w-auto border-2 border-zinc-800 hard-border">
+                            {[0.5, 1, 2, 4].map((speed, i) => (
                                 <button
                                     key={speed}
                                     onClick={() => setPlaybackSpeed(speed)}
-                                    className={`px-3 py-2 text-xs rounded transition-colors ${playbackSpeed === speed
-                                        ? "bg-yellow-500 text-black font-bold"
-                                        : "bg-zinc-800 text-zinc-400 hover:bg-zinc-700"
+                                    className={`flex-1 md:w-16 py-2 md:py-3 text-[10px] md:text-xs uppercase tracking-widest font-bold transition-colors ${i < 3 ? 'border-r-2 border-zinc-800' : ''} ${playbackSpeed === speed
+                                        ? "bg-toxic-cyan text-black shadow-[0_0_10px_rgba(0,255,255,0.4)]"
+                                        : "bg-black text-zinc-500 hover:text-white hover:bg-zinc-900"
                                         }`}
                                 >
-                                    {speed}x
+                                    {speed}X
                                 </button>
                             ))}
                         </div>
                     </div>
+
                 </div>
             </motion.div>
         </div>

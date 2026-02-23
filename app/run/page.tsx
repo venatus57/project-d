@@ -13,13 +13,14 @@ import {
     Car, Weather, GhostRun, GhostPoint,
     WEATHER_INFO, STORAGE_KEYS, LatLng
 } from "../lib/types";
+import { addRewards } from "../lib/profile";
 
 // Dynamic map import
 const RunMapView = dynamic(() => import("./RunMapView"), {
     ssr: false,
     loading: () => (
-        <div className="w-full h-full bg-zinc-900 flex items-center justify-center">
-            <div className="text-zinc-500 font-mono animate-pulse">LOADING MAP...</div>
+        <div className="w-full h-full bg-black flex items-center justify-center font-pixel">
+            <div className="text-toxic-cyan text-xl animate-pulse glitch-hover">LOADING MAP...</div>
         </div>
     )
 });
@@ -60,6 +61,9 @@ export default function RunPage() {
     const [elapsedTime, setElapsedTime] = useState<number>(0);
     const [currentSpeed, setCurrentSpeed] = useState<number>(0);
     const [maxSpeed, setMaxSpeed] = useState<number>(0);
+
+    // Rewards state
+    const [runRewards, setRunRewards] = useState<{ xp: number, cr: number, ghostId: string } | null>(null);
 
     // Refs
     const watchIdRef = useRef<number | null>(null);
@@ -231,51 +235,58 @@ export default function RunPage() {
             ghosts.push(ghostRun);
             localStorage.setItem("projectd_ghosts", JSON.stringify(ghosts));
 
-            // Redirect to ghosts page
-            router.push(`/ghosts/detail?id=${ghostRun.id}`);
+            // Award XP and CR based on distance and speed and weather
+            let weatherBonus = 1.0;
+            if (selectedWeather === "PLUIE") weatherBonus = 1.2; // 20% bonus for rain
+            if (selectedWeather === "NUIT") weatherBonus = 1.1;  // 10% bonus for night
+
+            const rewards = addRewards(totalDistance, avgSpeed, weatherBonus);
+
+            // Show rewards modal instead of redirecting immediately
+            setRunRewards({ xp: rewards.gainedXp, cr: rewards.gainedCr, ghostId: ghostRun.id });
         }
     };
 
     // Setup screen
     if (!isSetupComplete) {
         return (
-            <div className="min-h-screen bg-zinc-950 text-zinc-100 p-8 font-mono">
+            <div className="min-h-screen bg-black text-white p-4 md:p-8 font-pixel">
                 {/* Header */}
-                <header className="mb-8 border-b border-zinc-800 pb-4">
-                    <Link href="/" className="text-zinc-500 hover:text-yellow-500 text-sm flex items-center gap-2 mb-4">
+                <header className="mb-8 border-b-2 border-zinc-800 pb-4">
+                    <Link href="/" className="inline-flex text-zinc-500 hover:text-toxic-cyan text-sm items-center gap-2 mb-4 uppercase tracking-widest hard-border px-3 py-1 border-2 border-transparent hover:border-toxic-cyan transition-colors">
                         <ArrowLeft size={14} /> Accueil
                     </Link>
-                    <h1 className="text-4xl font-bold italic tracking-tighter text-yellow-500">
-                        NOUVEAU RUN
+                    <h1 className="text-3xl md:text-5xl font-bold uppercase tracking-widest text-toxic-magenta text-shadow-neon glitch-hover">
+                        START RUN
                     </h1>
-                    <p className="text-zinc-500 mt-2">Configure ton run MF Ghost</p>
+                    <p className="text-zinc-500 mt-2 uppercase text-xs tracking-widest">Configure telemetry link</p>
                 </header>
 
                 <div className="max-w-2xl mx-auto space-y-8">
 
                     {/* Driver Name */}
-                    <div>
-                        <label className="text-zinc-400 text-sm block mb-2">NOM DU PILOTE</label>
+                    <div className="bg-zinc-950 p-4 border-2 border-zinc-800 hard-border shadow-[0_0_15px_rgba(0,0,0,0.5)]">
+                        <label className="text-toxic-cyan text-[10px] md:text-xs font-bold tracking-widest uppercase block mb-2">NOM DU PILOTE</label>
                         <input
                             type="text"
                             placeholder="Ton pseudo..."
                             value={driverName}
                             onChange={(e) => setDriverName(e.target.value)}
-                            className="w-full bg-zinc-900 border border-zinc-700 rounded px-4 py-3 text-lg"
+                            className="w-full bg-black border-2 border-zinc-800 hard-border focus:border-toxic-cyan placeholder-zinc-700 outline-none px-4 py-3 text-lg text-white"
                         />
                     </div>
 
                     {/* Car Selection */}
-                    <div>
-                        <label className="text-zinc-400 text-sm block mb-2 flex items-center gap-2">
+                    <div className="bg-zinc-950 p-4 border-2 border-zinc-800 hard-border shadow-[0_0_15px_rgba(0,0,0,0.5)]">
+                        <label className="text-toxic-magenta text-[10px] md:text-xs font-bold tracking-widest uppercase block mb-3 flex items-center gap-2">
                             <CarIcon size={14} /> SÉLECTIONNE TA VOITURE
                         </label>
                         {cars.length === 0 ? (
                             <Link
                                 href="/cars"
-                                className="block w-full bg-zinc-900 border-2 border-dashed border-zinc-700 rounded p-6 text-center text-zinc-500 hover:border-yellow-500 hover:text-yellow-500 transition-colors"
+                                className="block w-full bg-black border-2 border-dashed border-zinc-800 hard-border p-6 text-center text-zinc-500 hover:border-toxic-cyan hover:text-toxic-cyan transition-colors uppercase tracking-widest text-sm"
                             >
-                                Aucune voiture → Ajouter une voiture
+                                Aucune voiture → Aller au Garage
                             </Link>
                         ) : (
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -283,13 +294,13 @@ export default function RunPage() {
                                     <button
                                         key={car.id}
                                         onClick={() => setSelectedCar(car)}
-                                        className={`p-4 border rounded text-left transition-colors ${selectedCar?.id === car.id
-                                            ? "bg-yellow-500/20 border-yellow-500"
-                                            : "bg-zinc-900 border-zinc-700 hover:border-zinc-500"
+                                        className={`p-4 border-2 text-left hard-border transition-colors ${selectedCar?.id === car.id
+                                            ? "bg-toxic-magenta/20 border-toxic-magenta text-toxic-magenta shadow-[0_0_10px_rgba(255,0,255,0.2)]"
+                                            : "bg-black border-zinc-800 text-zinc-400 hover:border-zinc-500"
                                             }`}
                                     >
-                                        <div className="font-bold">{car.name}</div>
-                                        <div className="text-sm text-zinc-500">
+                                        <div className="font-bold uppercase tracking-widest">{car.name}</div>
+                                        <div className="text-[10px] text-zinc-500 mt-1 uppercase">
                                             {car.power}ch • {car.weight}kg • {car.drivetrain}
                                         </div>
                                     </button>
@@ -299,16 +310,16 @@ export default function RunPage() {
                     </div>
 
                     {/* Touge Selection */}
-                    <div>
-                        <label className="text-zinc-400 text-sm block mb-2 flex items-center gap-2">
+                    <div className="bg-zinc-950 p-4 border-2 border-zinc-800 hard-border shadow-[0_0_15px_rgba(0,0,0,0.5)]">
+                        <label className="text-toxic-yellow text-[10px] md:text-xs font-bold tracking-widest uppercase block mb-3 flex items-center gap-2">
                             <MapPin size={14} /> SÉLECTIONNE LE TOUGE
                         </label>
                         {touges.length === 0 ? (
                             <Link
                                 href="/conquest/builder"
-                                className="block w-full bg-zinc-900 border-2 border-dashed border-zinc-700 rounded p-6 text-center text-zinc-500 hover:border-yellow-500 hover:text-yellow-500 transition-colors"
+                                className="block w-full bg-black border-2 border-dashed border-zinc-800 hard-border p-6 text-center text-zinc-500 hover:border-toxic-yellow hover:text-toxic-yellow transition-colors uppercase tracking-widest text-sm"
                             >
-                                Aucun touge → Créer un touge
+                                Aucun touge → Route Builder
                             </Link>
                         ) : (
                             <div className="space-y-2">
@@ -316,13 +327,13 @@ export default function RunPage() {
                                     <button
                                         key={touge.id}
                                         onClick={() => setSelectedTouge(touge)}
-                                        className={`w-full p-4 border rounded text-left transition-colors ${selectedTouge?.id === touge.id
-                                            ? "bg-yellow-500/20 border-yellow-500"
-                                            : "bg-zinc-900 border-zinc-700 hover:border-zinc-500"
+                                        className={`w-full p-4 border-2 text-left hard-border transition-colors ${selectedTouge?.id === touge.id
+                                            ? "bg-toxic-yellow/20 border-toxic-yellow text-toxic-yellow shadow-[0_0_10px_rgba(255,255,0,0.2)]"
+                                            : "bg-black border-zinc-800 text-zinc-400 hover:border-zinc-500"
                                             }`}
                                     >
-                                        <div className="font-bold">{touge.name}</div>
-                                        <div className="text-sm text-zinc-500">
+                                        <div className="font-bold uppercase tracking-widest">{touge.name}</div>
+                                        <div className="text-[10px] text-zinc-500 mt-1 uppercase">
                                             {touge.distance.toFixed(1)}km • {touge.region}
                                         </div>
                                     </button>
@@ -332,24 +343,34 @@ export default function RunPage() {
                     </div>
 
                     {/* Weather Selection */}
-                    <div>
-                        <label className="text-zinc-400 text-sm block mb-2">CONDITIONS MÉTÉO</label>
+                    <div className="bg-zinc-950 p-4 border-2 border-zinc-800 hard-border shadow-[0_0_15px_rgba(0,0,0,0.5)]">
+                        <label className="text-toxic-green text-[10px] md:text-xs font-bold tracking-widest uppercase block mb-3">CONDITIONS MÉTÉO</label>
                         <div className="grid grid-cols-3 gap-3">
-                            {(["SEC", "PLUIE", "NUIT"] as Weather[]).map(weather => (
-                                <button
-                                    key={weather}
-                                    onClick={() => setSelectedWeather(weather)}
-                                    className={`p-4 border rounded text-center transition-colors ${selectedWeather === weather
-                                        ? `bg-opacity-20 border-2 ${WEATHER_INFO[weather].color}`
-                                        : "bg-zinc-900 border-zinc-700 hover:border-zinc-500"
-                                        }`}
-                                >
-                                    <div className="text-3xl mb-1">{WEATHER_INFO[weather].icon}</div>
-                                    <div className={`text-sm font-bold ${WEATHER_INFO[weather].color}`}>
-                                        {WEATHER_INFO[weather].label}
-                                    </div>
-                                </button>
-                            ))}
+                            {(["SEC", "PLUIE", "NUIT"] as Weather[]).map(weather => {
+                                const isSelected = selectedWeather === weather;
+                                let colorClass = "";
+                                if (weather === "SEC") colorClass = isSelected ? "border-white text-white shadow-[0_0_10px_rgba(255,255,255,0.4)] bg-white/10" : "text-zinc-500";
+                                if (weather === "PLUIE") colorClass = isSelected ? "border-toxic-cyan text-toxic-cyan shadow-[0_0_10px_rgba(0,255,255,0.4)] bg-toxic-cyan/10" : "text-zinc-500";
+                                if (weather === "NUIT") colorClass = isSelected ? "border-toxic-magenta text-toxic-magenta shadow-[0_0_10px_rgba(255,0,255,0.4)] bg-toxic-magenta/10" : "text-zinc-500";
+
+                                return (
+                                    <button
+                                        key={weather}
+                                        onClick={() => setSelectedWeather(weather)}
+                                        className={`p-4 border-2 hard-border text-center transition-all flex flex-col items-center justify-center ${isSelected
+                                            ? colorClass
+                                            : "bg-black border-zinc-800 hover:border-zinc-500"
+                                            }`}
+                                    >
+                                        <div className="text-2xl md:text-3xl mb-1">{WEATHER_INFO[weather].icon}</div>
+                                        <div className={`text-[10px] md:text-xs font-bold uppercase tracking-widest`}>
+                                            {WEATHER_INFO[weather].label}
+                                        </div>
+                                        {weather === "PLUIE" && <div className="text-[8px] md:text-[10px] text-toxic-cyan mt-1 font-bold tracking-widest">+20% XP/CR</div>}
+                                        {weather === "NUIT" && <div className="text-[8px] md:text-[10px] text-toxic-magenta mt-1 font-bold tracking-widest">+10% XP/CR</div>}
+                                    </button>
+                                );
+                            })}
                         </div>
                     </div>
 
@@ -357,11 +378,12 @@ export default function RunPage() {
                     <button
                         onClick={() => setIsSetupComplete(true)}
                         disabled={!selectedCar || !selectedTouge}
-                        className="w-full py-4 bg-green-500 text-black font-bold text-lg rounded hover:bg-green-400 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-3"
+                        className="w-full py-4 bg-toxic-green text-black font-bold text-xl hard-border hover:bg-white disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-zinc-800 disabled:text-zinc-500 transition-colors flex items-center justify-center gap-3 uppercase tracking-widest shadow-[0_0_20px_rgba(0,255,65,0.4)] glitch-hover"
                     >
                         <Play size={24} />
-                        PRÉPARER LE RUN
+                        CONNECT TELEMETRY
                     </button>
+                    <div className="h-12" /> {/* Mobile bottom spacer */}
                 </div>
             </div>
         );
@@ -369,10 +391,10 @@ export default function RunPage() {
 
     // Recording screen
     return (
-        <div className="h-screen w-full bg-zinc-950 relative overflow-hidden">
+        <div className="h-[100dvh] w-full bg-black relative overflow-hidden font-pixel">
 
-            {/* Map (full screen) */}
-            <div className="absolute inset-0">
+            {/* Map (full screen, behind HUD) */}
+            <div className="absolute inset-0 top-24 md:top-32 bottom-24">
                 <RunMapView
                     tougePoints={selectedTouge?.routeGeometry || selectedTouge?.points || []}
                     currentPosition={currentPosition}
@@ -380,105 +402,122 @@ export default function RunPage() {
                 />
             </div>
 
-            {/* HUD - Top Bar */}
-            <div className="absolute top-4 left-4 right-4 z-[1000]">
-                <div className="bg-zinc-950/90 backdrop-blur-md border border-zinc-800 rounded p-4">
-                    <div className="flex items-center justify-between">
-                        {/* Car & Touge Info */}
-                        <div className="flex items-center gap-4">
-                            <div className="flex items-center gap-2 text-yellow-500">
-                                <CarIcon size={20} />
-                                <span className="font-bold">{selectedCar?.name}</span>
-                            </div>
-                            <div className="text-zinc-500">|</div>
-                            <div className="flex items-center gap-2 text-zinc-400">
-                                <MapPin size={16} />
-                                <span>{selectedTouge?.name}</span>
-                            </div>
-                            <div className="text-2xl">{WEATHER_INFO[selectedWeather].icon}</div>
-                        </div>
+            {/* UNIFIED HUD - Top (Mobile friendly) */}
+            <div className="absolute top-0 left-0 right-0 z-[1000]">
+                <div className="bg-black/95 backdrop-blur-md border-b-2 border-zinc-800 p-3 shadow-[0_10px_30px_rgba(0,0,0,0.8)]">
 
-                        {/* GPS Status */}
-                        <div className="flex items-center gap-2 text-xs">
+                    {/* Info Row */}
+                    <div className="flex items-center justify-between border-b-2 border-zinc-800 pb-2 mb-2">
+                        <div className="flex items-center gap-2 text-[10px] md:text-xs uppercase tracking-widest">
+                            <span className="text-toxic-cyan font-bold truncate max-w-[80px] md:max-w-[200px]">{selectedCar?.name}</span>
+                            <span className="text-zinc-600">|</span>
+                            <span className="text-zinc-400 truncate max-w-[80px] md:max-w-[200px] pl-1">{selectedTouge?.name}</span>
+                            <span className="text-base leading-none pl-1">{WEATHER_INFO[selectedWeather].icon}</span>
+                        </div>
+                        <div className="text-[10px] md:text-xs font-bold tracking-widest">
                             {gpsError ? (
-                                <span className="text-red-500 flex items-center gap-1">
-                                    <AlertCircle size={14} /> {gpsError}
-                                </span>
+                                <span className="text-red-500 animate-pulse">{gpsError}</span>
                             ) : (
-                                <span className="text-green-500">
-                                    GPS: ±{gpsAccuracy.toFixed(0)}m
-                                </span>
+                                <span className="text-toxic-green text-shadow-[0_0_5px_rgba(0,255,65,0.5)]">GPS: ±{gpsAccuracy.toFixed(0)}m</span>
                             )}
                         </div>
                     </div>
-                </div>
-            </div>
 
-            {/* HUD - Timer (center top) */}
-            <div className="absolute top-24 left-1/2 -translate-x-1/2 z-[1000]">
-                <div className="bg-zinc-950/90 backdrop-blur-md border border-yellow-500 rounded-lg px-8 py-4 text-center">
-                    <div className="text-5xl font-bold text-yellow-500 font-mono">
-                        {formatTime(elapsedTime)}
-                    </div>
-                    {isRecording && (
-                        <div className="flex items-center justify-center gap-2 mt-2 text-red-500">
-                            <span className="w-3 h-3 bg-red-500 rounded-full animate-pulse"></span>
-                            RECORDING
+                    {/* Stats Row */}
+                    <div className="flex items-center justify-between">
+                        {/* Left: Waypoints */}
+                        <div className="text-center w-16 md:w-24">
+                            <div className="text-xl md:text-2xl font-bold text-toxic-magenta">{gpsPoints.length}</div>
+                            <div className="text-zinc-600 text-[10px] uppercase tracking-widest">PTS</div>
                         </div>
-                    )}
-                </div>
-            </div>
 
-            {/* HUD - Speed (right side) */}
-            <div className="absolute top-40 right-4 z-[1000]">
-                <div className="bg-zinc-950/90 backdrop-blur-md border border-zinc-800 rounded p-4 text-center w-32">
-                    <Gauge size={20} className="mx-auto text-zinc-500 mb-1" />
-                    <div className="text-3xl font-bold text-green-500">{currentSpeed.toFixed(0)}</div>
-                    <div className="text-zinc-600 text-xs">km/h</div>
-                    <div className="border-t border-zinc-800 mt-2 pt-2">
-                        <div className="text-lg font-bold text-yellow-500">{maxSpeed.toFixed(0)}</div>
-                        <div className="text-zinc-600 text-xs">MAX</div>
-                    </div>
-                </div>
-            </div>
-
-            {/* HUD - Stats (left side) */}
-            <div className="absolute top-40 left-4 z-[1000]">
-                <div className="bg-zinc-950/90 backdrop-blur-md border border-zinc-800 rounded p-4 w-32 space-y-3">
-                    <div className="text-center">
-                        <div className="text-2xl font-bold text-blue-500">{gpsPoints.length}</div>
-                        <div className="text-zinc-600 text-xs">Points GPS</div>
-                    </div>
-                    {currentPosition && (
-                        <div className="text-center text-xs text-zinc-500 font-mono">
-                            {currentPosition[0].toFixed(4)}<br />
-                            {currentPosition[1].toFixed(4)}
+                        {/* Center: Timer */}
+                        <div className="text-center flex-1">
+                            <div className="text-4xl md:text-5xl font-bold text-toxic-yellow text-shadow-[0_0_10px_rgba(255,255,0,0.3)]">
+                                {formatTime(elapsedTime)}
+                            </div>
+                            {isRecording && (
+                                <div className="text-red-500 text-[10px] md:text-xs uppercase tracking-widest flex items-center justify-center gap-1 mt-1 font-bold">
+                                    <span className="w-2 h-2 bg-red-500 rounded-none animate-pulse"></span>
+                                    REC
+                                </div>
+                            )}
                         </div>
-                    )}
+
+                        {/* Right: Speed */}
+                        <div className="text-center w-20 md:w-24 border-l-2 border-zinc-800 pl-2">
+                            <div className="text-2xl md:text-3xl font-bold text-toxic-green">{currentSpeed.toFixed(0)}</div>
+                            <div className="text-zinc-600 text-[10px] uppercase tracking-widest border-b-2 border-zinc-800 pb-1 mb-1">KM/H</div>
+                            <div className="text-xs md:text-sm font-bold text-zinc-400">{maxSpeed.toFixed(0)} <span className="text-[8px] text-zinc-600">MAX</span></div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
             {/* HUD - Bottom Controls */}
-            <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-[1000]">
+            <div className="absolute bottom-6 inset-x-4 flex justify-center z-[1000]">
                 {!isRecording ? (
                     <button
                         onClick={startRun}
-                        className="flex items-center gap-3 px-12 py-6 bg-green-500 text-black font-bold text-xl rounded-lg hover:bg-green-400 transition-colors shadow-lg shadow-green-500/30"
+                        className="w-full md:w-auto md:min-w-[300px] flex justify-center items-center gap-2 px-8 py-3 md:py-4 bg-toxic-green text-black font-bold text-xl hard-border border-2 border-toxic-green hover:bg-white transition-colors shadow-[0_0_20px_rgba(0,255,65,0.4)] glitch-hover uppercase tracking-widest"
                     >
-                        <Play size={32} />
-                        DÉMARRER LE RUN
+                        <Play size={24} />
+                        START RUN
                     </button>
                 ) : (
                     <button
                         onClick={stopRun}
                         disabled={gpsPoints.length < 2}
-                        className="flex items-center gap-3 px-12 py-6 bg-red-500 text-white font-bold text-xl rounded-lg hover:bg-red-400 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-lg shadow-red-500/30"
+                        className="w-full md:w-auto md:min-w-[300px] flex justify-center items-center gap-2 px-8 py-3 md:py-4 bg-toxic-magenta text-white font-bold text-xl hard-border border-2 border-toxic-magenta hover:bg-white hover:text-black disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-[0_0_20px_rgba(255,0,255,0.4)] glitch-hover uppercase tracking-widest"
                     >
-                        <Square size={32} />
-                        TERMINER ({formatTime(elapsedTime)})
+                        <Square size={24} />
+                        STOP RUN
                     </button>
                 )}
             </div>
+
+            {/* REWARDS MODAL */}
+            <AnimatePresence>
+                {runRewards && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        className="absolute inset-0 z-[2000] bg-black/90 backdrop-blur-md flex items-center justify-center p-4"
+                    >
+                        <motion.div
+                            initial={{ scale: 0.9, y: 20 }}
+                            animate={{ scale: 1, y: 0 }}
+                            className="bg-black border-2 border-toxic-yellow hard-border p-6 md:p-8 max-w-md w-full text-center shadow-[0_0_30px_rgba(255,255,0,0.3)]"
+                        >
+                            <Trophy size={48} className="text-toxic-yellow mx-auto mb-4" />
+                            <h2 className="text-2xl md:text-3xl font-bold uppercase tracking-widest text-toxic-yellow mb-2 text-shadow-[0_0_10px_rgba(255,255,0,0.5)] glitch-hover">
+                                TELEMETRY SAVED
+                            </h2>
+                            <p className="text-zinc-500 text-xs md:text-sm uppercase tracking-widest mb-8 border-b-2 border-zinc-800 pb-4">
+                                Données de télémétrie transférées au Network.
+                            </p>
+
+                            <div className="grid grid-cols-2 gap-4 mb-8">
+                                <div className="bg-zinc-950 border-2 border-zinc-800 hard-border p-3">
+                                    <div className="text-zinc-500 text-[10px] uppercase tracking-widest mb-1">EXPÉRIENCE</div>
+                                    <div className="text-xl md:text-2xl font-bold text-toxic-yellow">+{runRewards.xp} <span className="text-xs">XP</span></div>
+                                </div>
+                                <div className="bg-zinc-950 border-2 border-zinc-800 hard-border p-3">
+                                    <div className="text-zinc-500 text-[10px] uppercase tracking-widest mb-1">CRÉDITS</div>
+                                    <div className="text-xl md:text-2xl font-bold text-toxic-green">+{runRewards.cr} <span className="text-xs">CR</span></div>
+                                </div>
+                            </div>
+
+                            <button
+                                onClick={() => router.push(`/ghosts/detail?id=${runRewards.ghostId}`)}
+                                className="w-full py-4 bg-toxic-yellow border-2 border-toxic-yellow text-black uppercase tracking-widest font-bold text-sm md:text-lg hover:bg-white hard-border transition-colors shadow-[0_0_15px_rgba(255,255,0,0.4)]"
+                            >
+                                CONTINUER ({selectedWeather === "PLUIE" ? "BONUS PLUIE" : selectedWeather === "NUIT" ? "BONUS NUIT" : "BASE"}) →
+                            </button>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </div>
     );
 }

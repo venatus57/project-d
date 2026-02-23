@@ -71,10 +71,10 @@ export default function ConquestDetailClient({ id }: ConquestDetailClientProps) 
     };
 
     const difficultyColors = {
-        EASY: "bg-green-500/20 text-green-500 border-green-500",
-        MEDIUM: "bg-blue-500/20 text-blue-500 border-blue-500",
-        HARD: "bg-orange-500/20 text-orange-500 border-orange-500",
-        LEGENDARY: "bg-yellow-500/20 text-yellow-500 border-yellow-500",
+        EASY: "bg-toxic-green/20 text-toxic-green border-toxic-green shadow-[0_0_10px_rgba(0,255,65,0.2)]",
+        MEDIUM: "bg-toxic-cyan/20 text-toxic-cyan border-toxic-cyan shadow-[0_0_10px_rgba(0,255,255,0.2)]",
+        HARD: "bg-toxic-magenta/20 text-toxic-magenta border-toxic-magenta shadow-[0_0_10px_rgba(255,0,255,0.2)]",
+        LEGENDARY: "bg-toxic-yellow/20 text-toxic-yellow border-toxic-yellow shadow-[0_0_10px_rgba(255,255,0,0.2)]",
     };
 
     const typeIcons = {
@@ -85,8 +85,8 @@ export default function ConquestDetailClient({ id }: ConquestDetailClientProps) 
 
     if (!route) {
         return (
-            <div className="min-h-screen bg-zinc-950 text-zinc-100 flex items-center justify-center">
-                <div className="text-zinc-500">Trac├® non trouv├®...</div>
+            <div className="min-h-screen bg-black text-zinc-100 flex items-center justify-center font-pixel">
+                <div className="text-zinc-500 uppercase font-bold tracking-widest">TRACÉ NON TROUVÉ...</div>
             </div>
         );
     }
@@ -97,7 +97,7 @@ export default function ConquestDetailClient({ id }: ConquestDetailClientProps) 
         : route.points;
 
     return (
-        <div className="h-screen w-full bg-zinc-950 relative overflow-hidden">
+        <div className="h-screen w-full bg-black relative overflow-hidden font-pixel">
 
             {/* MAP (Full screen) */}
             <div className="absolute inset-0">
@@ -113,18 +113,18 @@ export default function ConquestDetailClient({ id }: ConquestDetailClientProps) 
                 animate={{ y: 0, opacity: 1 }}
                 className="absolute top-4 left-4 right-4 z-[1000]"
             >
-                <div className="bg-zinc-950/90 backdrop-blur-md border border-zinc-800 rounded p-4">
+                <div className="bg-black/90 backdrop-blur-md border-2 border-zinc-800 hard-border p-4 shadow-[0_0_20px_rgba(0,0,0,0.8)]">
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-4">
                             <Link
                                 href="/conquest"
-                                className="text-zinc-400 hover:text-yellow-500 transition-colors"
+                                className="text-zinc-500 hover:text-toxic-cyan transition-colors"
                             >
                                 <ArrowLeft size={24} />
                             </Link>
                             <div>
-                                <h1 className="text-2xl font-bold text-yellow-500">{route.name}</h1>
-                                <div className="flex items-center gap-3 mt-1 text-sm text-zinc-500">
+                                <h1 className="text-3xl font-bold text-toxic-magenta uppercase tracking-wider text-shadow-neon glitch-hover">{route.name}</h1>
+                                <div className="flex items-center gap-3 mt-1 text-xs font-bold text-zinc-500 tracking-widest uppercase">
                                     <span className="flex items-center gap-1">
                                         <Mountain size={14} />
                                         {route.region}
@@ -140,7 +140,7 @@ export default function ConquestDetailClient({ id }: ConquestDetailClientProps) 
                         <div className="flex items-center gap-2">
                             <button
                                 onClick={deleteRoute}
-                                className="p-2 bg-red-500/20 text-red-500 hover:bg-red-500/30 rounded transition-colors"
+                                className="p-2 bg-black border-2 border-red-500/50 text-red-500 hover:bg-red-500 hover:text-black hard-border transition-colors shadow-[0_0_10px_rgba(239,68,68,0.2)]"
                             >
                                 <Trash2 size={18} />
                             </button>
@@ -153,54 +153,54 @@ export default function ConquestDetailClient({ id }: ConquestDetailClientProps) 
             <motion.div
                 initial={{ x: 50, opacity: 0 }}
                 animate={{ x: 0, opacity: 1 }}
-                className="absolute top-28 right-4 z-[1000]"
+                className="absolute top-32 right-4 z-[1000]"
             >
-                <div className="bg-zinc-950/90 backdrop-blur-md border border-zinc-800 rounded p-4 space-y-4 w-64">
+                <div className="bg-black/90 backdrop-blur-md border-2 border-zinc-800 hard-border p-4 space-y-4 w-64 shadow-[0_0_20px_rgba(0,0,0,0.8)]">
 
                     {/* Distance */}
-                    <div className="text-center">
-                        <div className="text-4xl font-bold text-yellow-500">{route.distance.toFixed(2)}</div>
-                        <div className="text-zinc-500 text-sm">KILOM├êTRES</div>
+                    <div className="text-center bg-zinc-950 border-2 border-zinc-800 hard-border p-3">
+                        <div className="text-4xl font-bold text-toxic-yellow text-shadow-[0_0_10px_rgba(255,255,0,0.3)]">{route.distance.toFixed(2)}</div>
+                        <div className="text-zinc-500 text-[10px] font-bold tracking-widest uppercase mt-1">KILOMÈTRES</div>
                     </div>
 
-                    <div className="border-t border-zinc-800" />
+                    <div className="border-t-2 border-zinc-800" />
 
                     {/* Stats */}
                     <div className="space-y-3">
                         <div className="flex items-center justify-between">
-                            <span className="text-zinc-500 text-sm flex items-center gap-2">
-                                <MapPin size={14} /> Waypoints
+                            <span className="text-zinc-500 text-xs font-bold tracking-widest uppercase flex items-center gap-2">
+                                <MapPin size={14} className="text-toxic-cyan" /> Waypoints
                             </span>
-                            <span className="text-zinc-100 font-bold">{route.points.length}</span>
+                            <span className="text-white font-bold text-lg">{route.points.length}</span>
                         </div>
 
                         <div className="flex items-center justify-between">
-                            <span className="text-zinc-500 text-sm flex items-center gap-2">
-                                <TypeIcon size={14} /> Type
+                            <span className="text-zinc-500 text-xs font-bold tracking-widest uppercase flex items-center gap-2">
+                                <TypeIcon size={14} className="text-toxic-magenta" /> Type
                             </span>
-                            <span className="text-zinc-100 font-bold">{route.type}</span>
+                            <span className="text-white font-bold text-sm tracking-wider uppercase">{route.type}</span>
                         </div>
 
                         <div className="flex items-center justify-between">
-                            <span className="text-zinc-500 text-sm">Difficult├®</span>
-                            <span className={`px-2 py-1 text-xs font-bold rounded border ${difficultyColors[route.difficulty]}`}>
+                            <span className="text-zinc-500 text-xs font-bold tracking-widest uppercase">Difficulté</span>
+                            <span className={`px-2 py-1 text-[10px] font-bold border-2 hard-border ${difficultyColors[route.difficulty]}`}>
                                 {route.difficulty}
                             </span>
                         </div>
                     </div>
 
-                    <div className="border-t border-zinc-800" />
+                    <div className="border-t-2 border-zinc-800" />
 
                     {/* Start/End coordinates */}
-                    <div className="space-y-2 text-xs">
+                    <div className="space-y-2 text-xs font-bold tracking-widest uppercase">
                         <div className="flex items-center gap-2">
-                            <span className="w-3 h-3 rounded-full bg-green-500"></span>
+                            <span className="w-3 h-3 hard-border bg-toxic-green shadow-[0_0_5px_rgba(0,255,65,0.5)]"></span>
                             <span className="text-zinc-400">
                                 {route.points[0][0].toFixed(4)}, {route.points[0][1].toFixed(4)}
                             </span>
                         </div>
                         <div className="flex items-center gap-2">
-                            <span className="w-3 h-3 rounded-full bg-red-500"></span>
+                            <span className="w-3 h-3 hard-border bg-toxic-magenta shadow-[0_0_5px_rgba(255,0,255,0.5)]"></span>
                             <span className="text-zinc-400">
                                 {route.points[route.points.length - 1][0].toFixed(4)}, {route.points[route.points.length - 1][1].toFixed(4)}
                             </span>

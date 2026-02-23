@@ -394,14 +394,14 @@ export default function RouteBuilderPage() {
     };
 
     const difficultyColors = {
-        EASY: "text-green-500 border-green-500",
-        MEDIUM: "text-blue-500 border-blue-500",
-        HARD: "text-orange-500 border-orange-500",
-        LEGENDARY: "text-yellow-500 border-yellow-500",
+        EASY: "text-toxic-green border-toxic-green",
+        MEDIUM: "text-toxic-cyan border-toxic-cyan",
+        HARD: "text-toxic-magenta border-toxic-magenta",
+        LEGENDARY: "text-toxic-yellow border-toxic-yellow",
     };
 
     return (
-        <div className="h-screen w-full bg-zinc-950 relative overflow-hidden">
+        <div className="h-screen w-full bg-black relative overflow-hidden font-pixel">
 
             {/* MAP (Full screen) */}
             <div className="absolute inset-0">
@@ -416,15 +416,15 @@ export default function RouteBuilderPage() {
 
             {/* HUD OVERLAY - Top */}
             <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[1000]">
-                <div className="bg-zinc-950/80 backdrop-blur-md border border-zinc-800 px-6 py-3 rounded">
-                    <h1 className="text-xl font-bold text-yellow-500 tracking-wider text-center">
+                <div className="bg-black/90 backdrop-blur-md border-2 border-zinc-800 px-6 py-3 hard-border shadow-[0_0_15px_rgba(0,0,0,0.8)]">
+                    <h1 className="text-2xl font-bold text-toxic-magenta tracking-widest text-center uppercase text-shadow-neon glitch-hover">
                         ROUTE BUILDER
                     </h1>
                     <div className="flex items-center justify-center gap-2 mt-2">
                         {[1, 2, 3].map((s) => (
                             <div
                                 key={s}
-                                className={`w-8 h-1 rounded ${step >= s ? "bg-yellow-500" : "bg-zinc-700"}`}
+                                className={`w-8 h-1 ${step >= s ? "bg-toxic-cyan shadow-[0_0_10px_rgba(0,255,255,0.8)]" : "bg-zinc-800"}`}
                             />
                         ))}
                     </div>
@@ -433,25 +433,25 @@ export default function RouteBuilderPage() {
 
             {/* HUD OVERLAY - Stats */}
             <div className="absolute top-4 right-4 z-[1000]">
-                <div className="bg-zinc-950/80 backdrop-blur-md border border-zinc-800 p-4 rounded space-y-2">
-                    <div className="flex items-center gap-2 text-zinc-400">
-                        <MapPin size={16} className="text-yellow-500" />
-                        <span className="text-sm">{waypoints.length} WAYPOINTS</span>
+                <div className="bg-black/90 backdrop-blur-md border-2 border-zinc-800 p-4 hard-border shadow-[0_0_15px_rgba(0,0,0,0.8)] space-y-2">
+                    <div className="flex items-center gap-2 text-zinc-500 font-bold tracking-widest uppercase text-xs">
+                        <MapPin size={16} className="text-toxic-cyan" />
+                        <span className="text-white">{waypoints.length} WAYPOINTS</span>
                     </div>
-                    <div className="flex items-center gap-2 text-zinc-400">
-                        <Ruler size={16} className="text-yellow-500" />
-                        <span className="text-sm font-bold text-yellow-500">
+                    <div className="flex items-center gap-2 text-zinc-500 font-bold tracking-widest uppercase text-xs">
+                        <Ruler size={16} className="text-toxic-magenta" />
+                        <span className="text-toxic-yellow text-shadow-[0_0_10px_rgba(255,255,0,0.5)]">
                             {isCalculating ? "..." : `${distance.toFixed(2)} KM`}
                         </span>
                     </div>
                     {snapToRoad && (
-                        <div className="flex items-center gap-2 text-green-500 text-xs">
+                        <div className="flex items-center gap-2 text-toxic-green text-[10px] font-bold tracking-widest uppercase">
                             <Route size={12} />
                             <span>SNAP TO ROAD</span>
                         </div>
                     )}
-                    <div className="border-t border-zinc-800 pt-2 mt-2">
-                        <div className="text-zinc-500 text-xs">{selectedRegion.name}</div>
+                    <div className="border-t-2 border-zinc-800 pt-2 mt-2">
+                        <div className="text-zinc-500 text-[10px] font-bold tracking-widest uppercase">{selectedRegion.name}</div>
                     </div>
                 </div>
             </div>
@@ -460,19 +460,28 @@ export default function RouteBuilderPage() {
             <AnimatePresence>
                 {isPanelOpen && (
                     <motion.div
-                        initial={{ x: -360 }}
+                        initial={{ x: -400 }}
                         animate={{ x: 0 }}
-                        exit={{ x: -360 }}
-                        className="absolute top-20 left-4 bottom-4 w-[340px] z-[1000] flex flex-col"
+                        exit={{ x: -400 }}
+                        transition={{ duration: 0.2 }}
+                        className="absolute top-14 md:top-20 left-0 md:left-4 bottom-0 md:bottom-4 w-full md:w-[340px] z-[1000] flex flex-col p-4 md:p-0"
                     >
-                        <div className="bg-zinc-950/90 backdrop-blur-md border border-zinc-800 rounded flex-1 flex flex-col overflow-hidden">
+                        <div className="bg-black/95 backdrop-blur-md border-2 border-zinc-800 hard-border flex-1 flex flex-col overflow-hidden shadow-[0_0_20px_rgba(0,0,0,0.8)]">
+
+                            {/* Mobile Close Button (inside panel) */}
+                            <button
+                                onClick={() => setIsPanelOpen(false)}
+                                className="md:hidden w-full py-3 bg-red-500/10 border-b-2 border-red-500/30 text-red-500 text-xs font-bold uppercase tracking-widest text-center hover:bg-red-500 hover:text-black transition-colors"
+                            >
+                                ↓ FERMER LE PANNEAU ↓
+                            </button>
 
                             {/* Mode Tabs */}
-                            <div className="flex border-b border-zinc-800">
+                            <div className="flex border-b-2 border-zinc-800">
                                 <button
                                     onClick={() => { setMode("DRAW"); setStep(1); }}
-                                    className={`flex-1 flex items-center justify-center gap-1 py-3 text-xs font-bold transition-colors ${mode === "DRAW"
-                                        ? "bg-yellow-500/10 text-yellow-500 border-b-2 border-yellow-500"
+                                    className={`flex-1 flex items-center justify-center gap-1 py-3 text-sm font-bold tracking-widest uppercase transition-colors ${mode === "DRAW"
+                                        ? "bg-toxic-cyan/20 text-toxic-cyan border-b-2 border-toxic-cyan shadow-[0_0_10px_rgba(0,255,255,0.2)]"
                                         : "text-zinc-500 hover:text-zinc-300"
                                         }`}
                                 >
@@ -480,8 +489,8 @@ export default function RouteBuilderPage() {
                                 </button>
                                 <button
                                     onClick={() => { setMode("TRACK"); setStep(1); fullReset(); }}
-                                    className={`flex-1 flex items-center justify-center gap-1 py-3 text-xs font-bold transition-colors ${mode === "TRACK"
-                                        ? "bg-green-500/10 text-green-500 border-b-2 border-green-500"
+                                    className={`flex-1 flex items-center justify-center gap-1 py-3 text-sm font-bold tracking-widest uppercase transition-colors ${mode === "TRACK"
+                                        ? "bg-toxic-green/20 text-toxic-green border-b-2 border-toxic-green shadow-[0_0_10px_rgba(0,255,65,0.2)]"
                                         : "text-zinc-500 hover:text-zinc-300"
                                         }`}
                                 >
@@ -489,8 +498,8 @@ export default function RouteBuilderPage() {
                                 </button>
                                 <button
                                     onClick={() => { setMode("IMPORT"); setStep(1); }}
-                                    className={`flex-1 flex items-center justify-center gap-1 py-3 text-xs font-bold transition-colors ${mode === "IMPORT"
-                                        ? "bg-yellow-500/10 text-yellow-500 border-b-2 border-yellow-500"
+                                    className={`flex-1 flex items-center justify-center gap-1 py-3 text-sm font-bold tracking-widest uppercase transition-colors ${mode === "IMPORT"
+                                        ? "bg-toxic-magenta/20 text-toxic-magenta border-b-2 border-toxic-magenta shadow-[0_0_10px_rgba(255,0,255,0.2)]"
                                         : "text-zinc-500 hover:text-zinc-300"
                                         }`}
                                 >
@@ -508,25 +517,25 @@ export default function RouteBuilderPage() {
                                         animate={{ opacity: 1 }}
                                         className="space-y-4"
                                     >
-                                        <div className="flex items-center gap-2 text-yellow-500 font-bold">
+                                        <div className="flex items-center gap-2 text-toxic-cyan font-bold tracking-widest uppercase text-shadow-[0_0_10px_rgba(0,255,255,0.5)]">
                                             <Flag size={16} />
                                             ÉTAPE 1 : CONFIGURATION
                                         </div>
 
                                         {/* Région */}
                                         <div>
-                                            <label className="text-zinc-400 text-xs block mb-2">RÉGION</label>
+                                            <label className="text-zinc-500 text-[10px] block mb-2 font-bold tracking-widest uppercase">RÉGION</label>
 
                                             {/* Category Tabs */}
-                                            <div className="flex flex-wrap gap-1 mb-3">
+                                            <div className="flex flex-wrap gap-2 mb-3">
                                                 {categories.map((cat) => (
                                                     <button
                                                         key={cat}
                                                         onClick={() => setSelectedCategory(cat)}
-                                                        className={`px-2 py-1 text-xs rounded transition-colors ${selectedCategory === cat
-                                                            ? "bg-yellow-500 text-black font-bold"
-                                                            : "bg-zinc-800 text-zinc-400 hover:bg-zinc-700"
-                                                            }`}
+                                                        className={`px-3 py-1.5 text-xs font-bold transition-colors hard-border border-2 ${selectedCategory === cat
+                                                            ? "bg-toxic-cyan text-black border-toxic-cyan shadow-[0_0_10px_rgba(0,255,255,0.4)]"
+                                                            : "bg-black text-zinc-500 border-zinc-800 hover:border-zinc-500"
+                                                            } uppercase tracking-wider`}
                                                     >
                                                         {cat}
                                                     </button>
@@ -534,19 +543,19 @@ export default function RouteBuilderPage() {
                                             </div>
 
                                             {/* Cols in selected category */}
-                                            <div className="bg-zinc-900 rounded p-2 max-h-40 overflow-y-auto space-y-1">
+                                            <div className="bg-black border-2 border-zinc-800 hard-border p-2 max-h-40 overflow-y-auto space-y-1">
                                                 {filteredRegions.map((region) => (
                                                     <button
                                                         key={region.name}
                                                         onClick={() => setSelectedRegion(region)}
-                                                        className={`w-full text-left p-2 text-xs rounded transition-colors flex items-center justify-between ${selectedRegion.name === region.name
-                                                            ? "bg-yellow-500/20 border border-yellow-500 text-yellow-500"
-                                                            : "border border-transparent hover:bg-zinc-800 text-zinc-300"
+                                                        className={`w-full text-left p-2 text-xs font-bold transition-colors flex items-center justify-between hard-border border-2 uppercase tracking-wide ${selectedRegion.name === region.name
+                                                            ? "bg-toxic-cyan/20 border-toxic-cyan text-toxic-cyan shadow-[0_0_10px_rgba(0,255,255,0.2)]"
+                                                            : "border-transparent hover:border-zinc-800 text-zinc-400"
                                                             }`}
                                                     >
                                                         <span>{region.name}</span>
                                                         {selectedRegion.name === region.name && (
-                                                            <span className="text-yellow-500">✓</span>
+                                                            <span className="text-toxic-cyan">✓</span>
                                                         )}
                                                     </button>
                                                 ))}
@@ -555,50 +564,50 @@ export default function RouteBuilderPage() {
 
                                         {/* Mode Snap to Road */}
                                         <div>
-                                            <label className="text-zinc-400 text-xs block mb-2">MODE TRACÉ</label>
+                                            <label className="text-zinc-500 text-[10px] block mb-2 font-bold tracking-widest uppercase">MODE TRACÉ</label>
                                             <div className="flex gap-2">
                                                 <button
                                                     onClick={() => setSnapToRoad(true)}
-                                                    className={`flex-1 flex items-center justify-center gap-2 p-3 border rounded transition-colors ${snapToRoad
-                                                        ? "bg-green-500/20 border-green-500 text-green-500"
-                                                        : "border-zinc-700 text-zinc-400 hover:border-zinc-500"
+                                                    className={`flex-1 flex items-center justify-center gap-2 p-3 font-bold border-2 hard-border transition-colors uppercase tracking-widest ${snapToRoad
+                                                        ? "bg-toxic-green/20 border-toxic-green text-toxic-green shadow-[0_0_10px_rgba(0,255,65,0.2)]"
+                                                        : "bg-black border-zinc-800 text-zinc-500 hover:border-zinc-500"
                                                         }`}
                                                 >
                                                     <Route size={16} />
-                                                    <span className="text-xs">Suivre la route</span>
+                                                    <span className="text-xs font-bold">SUIVRE LA ROUTE</span>
                                                 </button>
                                                 <button
                                                     onClick={() => setSnapToRoad(false)}
-                                                    className={`flex-1 flex items-center justify-center gap-2 p-3 border rounded transition-colors ${!snapToRoad
-                                                        ? "bg-yellow-500/20 border-yellow-500 text-yellow-500"
-                                                        : "border-zinc-700 text-zinc-400 hover:border-zinc-500"
+                                                    className={`flex-1 flex items-center justify-center gap-2 p-3 font-bold border-2 hard-border transition-colors uppercase tracking-widest ${!snapToRoad
+                                                        ? "bg-toxic-yellow/20 border-toxic-yellow text-toxic-yellow shadow-[0_0_10px_rgba(255,255,0,0.2)]"
+                                                        : "bg-black border-zinc-800 text-zinc-500 hover:border-zinc-500"
                                                         }`}
                                                 >
                                                     <Zap size={16} />
-                                                    <span className="text-xs">Ligne droite</span>
+                                                    <span className="text-xs font-bold">LIGNE DROITE</span>
                                                 </button>
                                             </div>
                                         </div>
 
                                         {/* Type */}
                                         <div>
-                                            <label className="text-zinc-400 text-xs block mb-2">TYPE</label>
+                                            <label className="text-zinc-500 text-[10px] block mb-2 font-bold tracking-widest uppercase">TYPE</label>
                                             <div className="flex gap-2">
                                                 {[
-                                                    { value: "DOWNHILL", label: "Descente", icon: TrendingDown },
-                                                    { value: "UPHILL", label: "Montée", icon: TrendingUp },
-                                                    { value: "MIXED", label: "Mixte", icon: Navigation },
+                                                    { value: "DOWNHILL", label: "DESCENTE", icon: TrendingDown },
+                                                    { value: "UPHILL", label: "MONTÉE", icon: TrendingUp },
+                                                    { value: "MIXED", label: "MIXTE", icon: Navigation },
                                                 ].map((t) => (
                                                     <button
                                                         key={t.value}
                                                         onClick={() => setRouteType(t.value as typeof routeType)}
-                                                        className={`flex-1 flex flex-col items-center gap-1 p-2 border rounded transition-colors ${routeType === t.value
-                                                            ? "bg-yellow-500/20 border-yellow-500 text-yellow-500"
-                                                            : "border-zinc-700 text-zinc-400 hover:border-zinc-500"
+                                                        className={`flex-1 flex flex-col items-center gap-1 p-3 font-bold border-2 hard-border transition-colors uppercase tracking-widest ${routeType === t.value
+                                                            ? "bg-toxic-magenta/20 border-toxic-magenta text-toxic-magenta shadow-[0_0_10px_rgba(255,0,255,0.2)]"
+                                                            : "bg-black border-zinc-800 text-zinc-500 hover:border-zinc-500"
                                                             }`}
                                                     >
                                                         <t.icon size={18} />
-                                                        <span className="text-xs">{t.label}</span>
+                                                        <span className="text-xs font-bold">{t.label}</span>
                                                     </button>
                                                 ))}
                                             </div>
@@ -606,15 +615,15 @@ export default function RouteBuilderPage() {
 
                                         {/* Difficulté */}
                                         <div>
-                                            <label className="text-zinc-400 text-xs block mb-2">DIFFICULTÉ</label>
+                                            <label className="text-zinc-500 text-[10px] block mb-2 font-bold tracking-widest uppercase">DIFFICULTÉ</label>
                                             <div className="grid grid-cols-4 gap-2">
                                                 {(["EASY", "MEDIUM", "HARD", "LEGENDARY"] as const).map((d) => (
                                                     <button
                                                         key={d}
                                                         onClick={() => setDifficulty(d)}
-                                                        className={`p-2 text-xs border rounded transition-colors ${difficulty === d
-                                                            ? `bg-opacity-20 ${difficultyColors[d]}`
-                                                            : "border-zinc-700 text-zinc-500 hover:border-zinc-500"
+                                                        className={`p-2 text-xs font-bold border-2 hard-border transition-colors uppercase tracking-widest ${difficulty === d
+                                                            ? `bg-opacity-20 ${difficultyColors[d]} bg-current shadow-[0_0_10px_currentColor]`
+                                                            : "bg-black border-zinc-800 text-zinc-500 hover:border-zinc-500"
                                                             }`}
                                                     >
                                                         {d.slice(0, 4)}
@@ -625,7 +634,7 @@ export default function RouteBuilderPage() {
 
                                         <button
                                             onClick={() => setStep(2)}
-                                            className="w-full bg-yellow-500 text-black hover:bg-yellow-400 py-3 text-sm font-bold rounded mt-4"
+                                            className="w-full bg-toxic-cyan text-black hover:bg-white py-3 text-sm font-bold mt-4 hard-border transition-colors uppercase tracking-widest shadow-[0_0_15px_rgba(0,255,255,0.4)]"
                                         >
                                             CONTINUER →
                                         </button>
@@ -762,30 +771,30 @@ export default function RouteBuilderPage() {
                                             <button
                                                 onClick={undoLastWaypoint}
                                                 disabled={waypoints.length === 0}
-                                                className="flex items-center justify-center gap-2 py-2 bg-zinc-800 hover:bg-zinc-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm transition-colors rounded"
+                                                className="flex items-center justify-center gap-2 py-3 bg-black border-2 border-zinc-800 hover:bg-zinc-800 hover:text-white hover:border-zinc-500 disabled:opacity-50 disabled:cursor-not-allowed text-xs font-bold transition-colors hard-border uppercase tracking-widest text-zinc-400"
                                             >
-                                                <Undo2 size={14} /> ANNULER
+                                                <Undo2 size={16} /> ANNULER
                                             </button>
                                             <button
                                                 onClick={resetRoute}
                                                 disabled={waypoints.length === 0}
-                                                className="flex items-center justify-center gap-2 py-2 bg-red-500/20 text-red-400 hover:bg-red-500/30 disabled:opacity-50 disabled:cursor-not-allowed text-sm transition-colors rounded"
+                                                className="flex items-center justify-center gap-2 py-3 bg-black border-2 border-red-500/50 text-red-500 hover:bg-red-500 hover:text-black disabled:opacity-50 disabled:cursor-not-allowed text-xs font-bold transition-colors hard-border uppercase tracking-widest shadow-[0_0_10px_rgba(239,68,68,0.2)] disabled:shadow-none"
                                             >
-                                                <RotateCcw size={14} /> RESET
+                                                <RotateCcw size={16} /> RESET
                                             </button>
                                         </div>
 
                                         {/* Waypoints List */}
                                         {waypoints.length > 0 && (
-                                            <div className="bg-zinc-900 rounded p-3 max-h-32 overflow-y-auto">
-                                                <div className="text-zinc-500 text-xs mb-2">WAYPOINTS</div>
+                                            <div className="bg-black border-2 border-zinc-800 hard-border p-3 max-h-32 overflow-y-auto">
+                                                <div className="text-zinc-500 text-[10px] font-bold tracking-widest uppercase mb-2">WAYPOINTS</div>
                                                 {waypoints.map((pt, i) => (
-                                                    <div key={i} className="flex items-center gap-2 text-xs py-1 border-b border-zinc-800 last:border-0">
-                                                        <span className={`w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold ${i === 0 ? "bg-green-500/20 text-green-500" : i === waypoints.length - 1 ? "bg-red-500/20 text-red-500" : "bg-yellow-500/20 text-yellow-500"
+                                                    <div key={i} className="flex items-center gap-2 text-xs py-1.5 border-b border-zinc-800 last:border-0">
+                                                        <span className={`w-5 h-5 flex items-center justify-center text-[10px] font-bold hard-border border-2 ${i === 0 ? "bg-toxic-green/20 text-toxic-green border-toxic-green shadow-[0_0_5px_rgba(0,255,65,0.5)]" : i === waypoints.length - 1 ? "bg-red-500/20 text-red-500 border-red-500 shadow-[0_0_5px_rgba(239,68,68,0.5)]" : "bg-toxic-yellow/20 text-toxic-yellow border-toxic-yellow"
                                                             }`}>
                                                             {i + 1}
                                                         </span>
-                                                        <span className="text-zinc-400 font-mono text-xs">
+                                                        <span className="text-zinc-400 font-pixel text-xs tracking-widest">
                                                             {pt[0].toFixed(4)}, {pt[1].toFixed(4)}
                                                         </span>
                                                     </div>
@@ -796,14 +805,14 @@ export default function RouteBuilderPage() {
                                         <div className="flex gap-2 mt-4">
                                             <button
                                                 onClick={() => setStep(1)}
-                                                className="flex-1 bg-zinc-800 hover:bg-zinc-700 py-2 text-sm rounded"
+                                                className="flex-1 bg-black border-2 border-zinc-800 hover:bg-zinc-800 text-zinc-400 hover:text-white py-3 text-sm font-bold transition-colors hard-border uppercase tracking-widest"
                                             >
                                                 ← RETOUR
                                             </button>
                                             <button
                                                 onClick={() => setStep(3)}
                                                 disabled={waypoints.length < 2}
-                                                className="flex-1 bg-yellow-500 text-black hover:bg-yellow-400 disabled:bg-zinc-700 disabled:text-zinc-500 py-2 text-sm font-bold rounded"
+                                                className="flex-1 bg-toxic-cyan text-black hover:bg-white disabled:bg-zinc-800 disabled:border-zinc-800 disabled:text-zinc-500 disabled:shadow-none py-3 text-sm font-bold transition-colors hard-border uppercase tracking-widest shadow-[0_0_15px_rgba(0,255,255,0.4)] border-2 border-toxic-cyan"
                                             >
                                                 CONTINUER →
                                             </button>
@@ -818,45 +827,45 @@ export default function RouteBuilderPage() {
                                         animate={{ opacity: 1 }}
                                         className="space-y-4"
                                     >
-                                        <div className="flex items-center gap-2 text-yellow-500 font-bold">
+                                        <div className="flex items-center gap-2 text-toxic-green font-bold text-shadow-[0_0_10px_rgba(0,255,65,0.5)] uppercase tracking-widest">
                                             <Save size={16} />
                                             ÉTAPE 3 : FINALISER
                                         </div>
 
                                         {/* Résumé */}
-                                        <div className="bg-zinc-900 rounded p-4 space-y-2">
-                                            <div className="flex justify-between text-sm">
-                                                <span className="text-zinc-500">Distance</span>
-                                                <span className="text-yellow-500 font-bold">{distance.toFixed(2)} km</span>
+                                        <div className="bg-black border-2 border-zinc-800 hard-border p-4 space-y-3 font-bold uppercase tracking-widest">
+                                            <div className="flex justify-between text-xs">
+                                                <span className="text-zinc-500">DISTANCE</span>
+                                                <span className="text-toxic-yellow text-shadow-[0_0_5px_rgba(255,255,0,0.5)]">{distance.toFixed(2)} KM</span>
                                             </div>
-                                            <div className="flex justify-between text-sm">
-                                                <span className="text-zinc-500">Waypoints</span>
-                                                <span className="text-zinc-100">{waypoints.length}</span>
+                                            <div className="flex justify-between text-xs">
+                                                <span className="text-zinc-500">WAYPOINTS</span>
+                                                <span className="text-white">{waypoints.length}</span>
                                             </div>
-                                            <div className="flex justify-between text-sm">
-                                                <span className="text-zinc-500">Type</span>
-                                                <span className="text-zinc-100">{routeType}</span>
+                                            <div className="flex justify-between text-xs">
+                                                <span className="text-zinc-500">TYPE</span>
+                                                <span className="text-white uppercase px-2 bg-toxic-magenta/20 border border-toxic-magenta text-toxic-magenta">{routeType}</span>
                                             </div>
-                                            <div className="flex justify-between text-sm">
-                                                <span className="text-zinc-500">Difficulté</span>
-                                                <span className={difficultyColors[difficulty]}>{difficulty}</span>
+                                            <div className="flex justify-between text-xs">
+                                                <span className="text-zinc-500">DIFFICULTÉ</span>
+                                                <span className={`px-2 text-[10px] hard-border border-2 ${difficultyColors[difficulty].split(' ')[0]} ${difficultyColors[difficulty].split(' ')[1]}`}>{difficulty}</span>
                                             </div>
-                                            <div className="flex justify-between text-sm">
-                                                <span className="text-zinc-500">Région</span>
-                                                <span className="text-zinc-100">{selectedRegion.name}</span>
+                                            <div className="flex justify-between text-xs">
+                                                <span className="text-zinc-500">RÉGION</span>
+                                                <span className="text-white bg-black border border-zinc-800 px-2">{selectedRegion.name}</span>
                                             </div>
-                                            <div className="flex justify-between text-sm">
-                                                <span className="text-zinc-500">Mode</span>
-                                                <span className={snapToRoad ? "text-green-500" : "text-yellow-500"}>
-                                                    {snapToRoad ? "Route réelle" : "Ligne droite"}
+                                            <div className="flex justify-between text-xs">
+                                                <span className="text-zinc-500">MODE</span>
+                                                <span className={snapToRoad ? "text-toxic-green" : "text-toxic-yellow"}>
+                                                    {snapToRoad ? "ROUTE RÉELLE" : "LIGNE DROITE"}
                                                 </span>
                                             </div>
                                         </div>
 
                                         <input
                                             type="text"
-                                            placeholder="Nom du tracé (ex: Col de Turini)"
-                                            className="w-full bg-zinc-900 border border-zinc-700 p-3 text-sm focus:border-yellow-500 outline-none rounded"
+                                            placeholder="NOM DU TRACÉ (EX: COL DE TURINI)"
+                                            className="w-full bg-black border-2 border-zinc-800 p-3 text-white font-bold uppercase tracking-widest focus:border-toxic-cyan outline-none hard-border transition-colors"
                                             value={routeName}
                                             onChange={(e) => setRouteName(e.target.value)}
                                         />
@@ -864,14 +873,14 @@ export default function RouteBuilderPage() {
                                         <div className="flex gap-2">
                                             <button
                                                 onClick={() => setStep(2)}
-                                                className="flex-1 bg-zinc-800 hover:bg-zinc-700 py-3 text-sm rounded"
+                                                className="flex-1 bg-black border-2 border-zinc-800 hover:bg-zinc-800 text-zinc-400 hover:text-white py-3 text-sm font-bold transition-colors hard-border uppercase tracking-widest"
                                             >
                                                 ← RETOUR
                                             </button>
                                             <button
                                                 onClick={saveRoute}
                                                 disabled={!routeName.trim()}
-                                                className="flex-1 bg-yellow-500 text-black hover:bg-yellow-400 disabled:bg-zinc-700 disabled:text-zinc-500 py-3 text-sm font-bold flex items-center justify-center gap-2 rounded"
+                                                className="flex-1 bg-toxic-green text-black hover:bg-white disabled:opacity-50 disabled:cursor-not-allowed py-3 text-sm font-bold flex items-center justify-center gap-2 hard-border uppercase tracking-widest transition-colors shadow-[0_0_15px_rgba(0,255,65,0.4)] disabled:shadow-none border-2 border-toxic-green disabled:border-zinc-800 disabled:bg-zinc-800 disabled:text-zinc-500"
                                             >
                                                 <Save size={16} /> SAUVEGARDER
                                             </button>
@@ -911,13 +920,22 @@ export default function RouteBuilderPage() {
                 )}
             </AnimatePresence>
 
-            {/* Toggle Panel Button */}
+            {/* Toggle Panel Button (Desktop) */}
             <button
                 onClick={() => setIsPanelOpen(!isPanelOpen)}
-                className="absolute top-1/2 -translate-y-1/2 z-[1001] bg-zinc-950/80 border border-zinc-800 p-2 rounded hover:border-yellow-500 transition-colors"
+                className="hidden md:block absolute top-1/2 -translate-y-1/2 z-[1001] bg-black/90 border-2 border-zinc-800 p-2 hard-border hover:border-toxic-cyan transition-colors shadow-[0_0_15px_rgba(0,0,0,0.8)] text-white hover:text-toxic-cyan"
                 style={{ left: isPanelOpen ? "360px" : "16px" }}
             >
                 {isPanelOpen ? <ChevronLeft size={20} /> : <ChevronRight size={20} />}
+            </button>
+
+            {/* Toggle Panel Button (Mobile) */}
+            <button
+                onClick={() => setIsPanelOpen(true)}
+                className={`md:hidden absolute z-[1001] bg-black/90 border-2 border-zinc-800 p-3 hard-border hover:border-toxic-cyan transition-colors shadow-[0_0_15px_rgba(0,0,0,0.8)] text-white font-bold tracking-widest uppercase text-xs ${isPanelOpen ? 'hidden' : 'flex'} items-center gap-2`}
+                style={{ bottom: "24px", left: "50%", transform: "translateX(-50%)" }}
+            >
+                <Pencil size={16} /> OUVRIR LE PANNEAU
             </button>
         </div>
     );

@@ -1,38 +1,63 @@
 @import "tailwindcss";
 
 :root {
-  --background: 0 0% 3.9%; /* Noir profond */
+  --background: 0 0% 3.9%;
+  /* Noir profond */
   --foreground: 0 0% 98%;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-pixel: var(--font-pixel);
+
+  /* Night Runners Toxic Palette */
+  --color-toxic-green: #00ff41;
+  --color-toxic-cyan: #00ffff;
+  --color-toxic-magenta: #ff00ff;
+  --color-toxic-yellow: #facc15;
 }
 
 body {
-  background-color: #050505; /* Plus sombre que noir */
+  background-color: #030303;
   color: #ededed;
-  /* On force une police technique style terminal */
-  font-family: 'Courier Prime', 'JetBrains Mono', monospace; 
-  /* Ajout d'une ligne de scan style vieux écran (optionnel) */
-  background-image: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
-  background-size: 100% 2px, 3px 100%;
+  font-family: var(--font-pixel), 'Courier Prime', monospace;
+  overflow-x: hidden;
+
+  /* Hard CRT Scanlines & Screen Glow */
+  background-image:
+    linear-gradient(rgba(0, 0, 0, 0) 50%, rgba(0, 0, 0, 0.3) 50%),
+    linear-gradient(90deg, rgba(255, 0, 0, 0.03), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.03));
+  background-size: 100% 4px, 3px 100%;
 }
+
 
 /* Scrollbar invisible mais fonctionnelle */
 ::-webkit-scrollbar {
   width: 8px;
 }
+
 ::-webkit-scrollbar-track {
   background: #0a0a0a;
 }
+
 ::-webkit-scrollbar-thumb {
   background: #333;
   border-radius: 4px;
 }
+
 ::-webkit-scrollbar-thumb:hover {
-  background: #fbbf24; /* Jaune au survol */
+  background: var(--color-toxic-magenta);
+  /* Magenta toxic au survol */
+}
+
+/* Base Night Runners Utilities */
+.glitch-hover:hover {
+  text-shadow: 2px 0 var(--color-toxic-magenta), -2px 0 var(--color-toxic-cyan);
+  transform: skewX(-2deg);
+}
+
+.hard-border {
+  border-width: 2px;
+  border-radius: 0;
 }
