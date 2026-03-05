@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { MapPin, Clock, ChevronRight, Route, Eye, Plus } from "lucide-react";
 import { motion } from "framer-motion";
+import { allCircuits } from "./data";
 
 // --- TYPES ---
 type LatLng = [number, number];
@@ -44,7 +45,7 @@ type UserRoute = {
 };
 
 export default function TougePage() {
-    const [circuits, setCircuits] = useState<TougeCircuit[]>([]);
+    const [circuits, setCircuits] = useState<TougeCircuit[]>(allCircuits);
     const [selectedId, setSelectedId] = useState<string | null>(null);
     const [regionFilter, setRegionFilter] = useState<string>("ALL");
 
@@ -66,9 +67,10 @@ export default function TougePage() {
                     description: `Tracé créé le ${route.createdAt}. Type: ${route.type}.`,
                     routePoints: route.routeGeometry && route.routeGeometry.length > 0
                         ? route.routeGeometry
-                        : route.points,
+                        : route.points || [],
                 }));
-                setCircuits(convertedRoutes);
+                // Combine default circuits with user routes
+                setCircuits([...allCircuits, ...convertedRoutes]);
             } catch { }
         }
     }, []);
@@ -226,7 +228,7 @@ export default function TougePage() {
                                                 </div>
                                                 <div className="bg-black border-2 border-zinc-800 p-3 hard-border">
                                                     <div className="text-zinc-500 text-[10px] font-bold tracking-widest uppercase">Points GPS</div>
-                                                    <div className="text-white font-bold text-lg">{circuit.routePoints.length}</div>
+                                                    <div className="text-white font-bold text-lg">{circuit.routePoints?.length || 0}</div>
                                                 </div>
                                                 {circuit.record && (
                                                     <div className="bg-black border-2 border-zinc-800 p-3 hard-border">

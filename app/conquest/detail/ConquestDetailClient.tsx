@@ -94,15 +94,15 @@ export default function ConquestDetailClient({ id }: ConquestDetailClientProps) 
     const TypeIcon = typeIcons[route.type];
     const displayPoints = route.routeGeometry && route.routeGeometry.length > 0
         ? route.routeGeometry
-        : route.points;
+        : route.points || [];
 
     return (
-        <div className="h-screen w-full bg-black relative overflow-hidden font-pixel">
+        <div className="h-[calc(100vh-3.5rem)] w-full bg-black relative overflow-hidden font-pixel">
 
             {/* MAP (Full screen) */}
             <div className="absolute inset-0">
                 <RouteMapView
-                    points={route.points}
+                    points={route.points || []}
                     routeGeometry={displayPoints}
                 />
             </div>
@@ -111,7 +111,7 @@ export default function ConquestDetailClient({ id }: ConquestDetailClientProps) 
             <motion.div
                 initial={{ y: -50, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
-                className="absolute top-4 left-4 right-4 z-[1000]"
+                className="absolute top-20 left-4 right-4 z-[1000]"
             >
                 <div className="bg-black/90 backdrop-blur-md border-2 border-zinc-800 hard-border p-4 shadow-[0_0_20px_rgba(0,0,0,0.8)]">
                     <div className="flex items-center justify-between">
@@ -153,7 +153,7 @@ export default function ConquestDetailClient({ id }: ConquestDetailClientProps) 
             <motion.div
                 initial={{ x: 50, opacity: 0 }}
                 animate={{ x: 0, opacity: 1 }}
-                className="absolute top-32 right-4 z-[1000]"
+                className="absolute top-48 right-4 z-[1000]"
             >
                 <div className="bg-black/90 backdrop-blur-md border-2 border-zinc-800 hard-border p-4 space-y-4 w-64 shadow-[0_0_20px_rgba(0,0,0,0.8)]">
 
@@ -171,7 +171,7 @@ export default function ConquestDetailClient({ id }: ConquestDetailClientProps) 
                             <span className="text-zinc-500 text-xs font-bold tracking-widest uppercase flex items-center gap-2">
                                 <MapPin size={14} className="text-toxic-cyan" /> Waypoints
                             </span>
-                            <span className="text-white font-bold text-lg">{route.points.length}</span>
+                            <span className="text-white font-bold text-lg">{route.points?.length || 0}</span>
                         </div>
 
                         <div className="flex items-center justify-between">
@@ -192,20 +192,22 @@ export default function ConquestDetailClient({ id }: ConquestDetailClientProps) 
                     <div className="border-t-2 border-zinc-800" />
 
                     {/* Start/End coordinates */}
-                    <div className="space-y-2 text-xs font-bold tracking-widest uppercase">
-                        <div className="flex items-center gap-2">
-                            <span className="w-3 h-3 hard-border bg-toxic-green shadow-[0_0_5px_rgba(0,255,65,0.5)]"></span>
-                            <span className="text-zinc-400">
-                                {route.points[0][0].toFixed(4)}, {route.points[0][1].toFixed(4)}
-                            </span>
+                    {route.points && route.points.length > 0 && (
+                        <div className="space-y-2 text-xs font-bold tracking-widest uppercase">
+                            <div className="flex items-center gap-2">
+                                <span className="w-3 h-3 hard-border bg-toxic-green shadow-[0_0_5px_rgba(0,255,65,0.5)]"></span>
+                                <span className="text-zinc-400">
+                                    {route.points[0][0].toFixed(4)}, {route.points[0][1].toFixed(4)}
+                                </span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <span className="w-3 h-3 hard-border bg-toxic-magenta shadow-[0_0_5px_rgba(255,0,255,0.5)]"></span>
+                                <span className="text-zinc-400">
+                                    {route.points[route.points.length - 1][0].toFixed(4)}, {route.points[route.points.length - 1][1].toFixed(4)}
+                                </span>
+                            </div>
                         </div>
-                        <div className="flex items-center gap-2">
-                            <span className="w-3 h-3 hard-border bg-toxic-magenta shadow-[0_0_5px_rgba(255,0,255,0.5)]"></span>
-                            <span className="text-zinc-400">
-                                {route.points[route.points.length - 1][0].toFixed(4)}, {route.points[route.points.length - 1][1].toFixed(4)}
-                            </span>
-                        </div>
-                    </div>
+                    )}
                 </div>
             </motion.div>
         </div>

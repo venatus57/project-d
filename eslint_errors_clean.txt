@@ -1,0 +1,9 @@
+[0m[0m
+[0m[4mC:\Users\kylia\Documents\Antigravity\Projet perso\Project D\project-d\app\ghosts\page.tsx[24m[0m
+[0m  [2m106:103[22m  [31merror[39m  Comments inside children section of tag should be placed inside braces  [2mreact/jsx-no-comment-textnodes[22m[0m
+[0m[0m
+[0m[4mC:\Users\kylia\Documents\Antigravity\Projet perso\Project D\project-d\public\sw.js[24m[0m
+[0m  [2m1:3937[22m  [31merror[39m  Unexpected aliasing of 'this' to local variable  [2m@typescript-eslint/no-this-alias[22m[0m
+[0m[0m
+[0m[31m[1m✖ 2 problems (2 errors, 0 warnings)[22m[39m[0m
+[0m[31m[1m[22m[39m[0m

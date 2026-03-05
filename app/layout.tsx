@@ -34,8 +34,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="dark">
-      <body className={`${vt323.variable} font-pixel antialiased bg-black text-[#f0f0f0]`}>
+    <html lang="en" className="dark" suppressHydrationWarning>
+      <body className={`${vt323.variable} font-pixel antialiased bg-black text-[#f0f0f0]`} suppressHydrationWarning>
         <Navbar />
         <div className="pt-14 h-full">
           <PageTransition>

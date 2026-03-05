@@ -41,7 +41,34 @@ export default function TougeDetailClient({ id }: TougeDetailClientProps) {
     const [circuit, setCircuit] = useState<TougeCircuit | null>(null);
 
     useEffect(() => {
-        const found = allCircuits.find(c => c.id === id);
+        let found = allCircuits.find(c => c.id === id);
+
+        if (!found) {
+            // Check custom routes in localStorage
+            const saved = window.localStorage.getItem("projectd_routes");
+            if (saved) {
+                try {
+                    const userRoutes = JSON.parse(saved);
+                    const userRoute = userRoutes.find((r: any) => `user-${r.id}` === id);
+                    if (userRoute) {
+                        found = {
+                            id: `user-${userRoute.id}`,
+                            name: userRoute.name.toUpperCase(),
+                            location: userRoute.region || "Personnalisé",
+                            country: "Mes Créations",
+                            length: `${userRoute.distance.toFixed(1)} km`,
+                            lengthKm: userRoute.distance,
+                            difficulty: userRoute.difficulty,
+                            description: `Tracé créé le ${userRoute.createdAt}. Type: ${userRoute.type}.`,
+                            routePoints: userRoute.routeGeometry && userRoute.routeGeometry.length > 0
+                                ? userRoute.routeGeometry
+                                : userRoute.points || [],
+                        };
+                    }
+                } catch { }
+            }
+        }
+
         if (found) {
             setCircuit(found);
         }
@@ -56,7 +83,7 @@ export default function TougeDetailClient({ id }: TougeDetailClientProps) {
     }
 
     return (
-        <div className="h-screen w-full bg-zinc-950 relative overflow-hidden">
+        <div className="h-[calc(100vh-3.5rem)] w-full bg-zinc-950 relative overflow-hidden">
 
             {/* MAP (Full screen) */}
             <div className="absolute inset-0">

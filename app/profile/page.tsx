@@ -7,6 +7,7 @@ import {
     TrendingUp, TrendingDown, Download, Upload
 } from "lucide-react";
 import { motion } from "framer-motion";
+import { getProfile, saveProfile, PlayerProfile } from "../lib/profile";
 
 // --- TYPES ---
 type BattleRecord = {
@@ -18,12 +19,6 @@ type BattleRecord = {
     technique?: string;
 };
 
-type DriverProfile = {
-    name: string;
-    specialty: "DOWNHILL" | "UPHILL" | "BOTH";
-    homeMountain: string;
-    avatar: string;
-};
 
 type Badge = {
     id: string;
@@ -113,16 +108,11 @@ const STORAGE_KEYS = {
     BATTLES: "projectd_battles",
 };
 
-const DEFAULT_PROFILE: DriverProfile = {
-    name: "DRIVER",
-    specialty: "DOWNHILL",
-    homeMountain: "AKINA",
-    avatar: "🏎️",
-};
+
 
 export default function ProfilePage() {
     // --- ÉTATS ---
-    const [profile, setProfile] = useState<DriverProfile>(DEFAULT_PROFILE);
+    const [profile, setProfile] = useState<PlayerProfile | null>(null);
     const [battles, setBattles] = useState<BattleRecord[]>([]);
     const [isLoaded, setIsLoaded] = useState(false);
     const [isEditingProfile, setIsEditingProfile] = useState(false);
@@ -137,12 +127,9 @@ export default function ProfilePage() {
 
     // --- CHARGEMENT LOCALSTORAGE ---
     useEffect(() => {
-        const savedProfile = localStorage.getItem(STORAGE_KEYS.PROFILE);
-        const savedBattles = localStorage.getItem(STORAGE_KEYS.BATTLES);
+        setProfile(getProfile());
 
-        if (savedProfile) {
-            try { setProfile(JSON.parse(savedProfile)); } catch { }
-        }
+        const savedBattles = localStorage.getItem(STORAGE_KEYS.BATTLES);
         if (savedBattles) {
             try { setBattles(JSON.parse(savedBattles)); } catch { }
         }
@@ -151,8 +138,8 @@ export default function ProfilePage() {
 
     // --- SAUVEGARDE AUTO ---
     useEffect(() => {
-        if (isLoaded) {
-            localStorage.setItem(STORAGE_KEYS.PROFILE, JSON.stringify(profile));
+        if (isLoaded && profile) {
+            saveProfile(profile);
         }
     }, [profile, isLoaded]);
 
@@ -262,18 +249,18 @@ export default function ProfilePage() {
                     <div className="bg-zinc-950 border-2 border-zinc-800 p-6 hard-border">
                         <div className="flex items-center gap-4 mb-6">
                             <div className="w-16 h-16 border-2 border-toxic-magenta bg-black flex items-center justify-center text-3xl hard-border shadow-[0_0_15px_rgba(255,0,255,0.3)]">
-                                {profile.avatar}
+                                {profile?.avatar || "🏎️"}
                             </div>
                             <div>
                                 {isEditingProfile ? (
                                     <input
                                         type="text"
-                                        value={profile.name}
-                                        onChange={(e) => setProfile({ ...profile, name: e.target.value })}
+                                        value={profile?.driverName || ""}
+                                        onChange={(e) => setProfile(prev => prev ? { ...prev, driverName: e.target.value } : null)}
                                         className="bg-black border-2 border-zinc-700 p-1 text-xl font-bold focus:border-toxic-magenta outline-none hard-border text-white uppercase w-full"
                                     />
                                 ) : (
-                                    <h2 className="text-3xl font-bold text-white uppercase glitch-hover">{profile.name}</h2>
+                                    <h2 className="text-3xl font-bold text-white uppercase glitch-hover">{profile?.driverName || "ANONYME"}</h2>
                                 )}
                                 <p className="text-toxic-magenta font-bold text-sm tracking-widest">PROJECT D MEMBER</p>
                             </div>
@@ -285,21 +272,22 @@ export default function ProfilePage() {
                                 <div>
                                     <label className="text-zinc-500 text-xs font-bold block mb-1">SPÉCIALITÉ</label>
                                     <select
-                                        value={profile.specialty}
-                                        onChange={(e) => setProfile({ ...profile, specialty: e.target.value as DriverProfile["specialty"] })}
+                                        value={profile?.specialty || "DOWNHILL"}
+                                        onChange={(e) => setProfile(prev => prev ? { ...prev, specialty: e.target.value as any } : null)}
                                         className="w-full bg-black border-2 border-zinc-700 p-2 text-sm focus:border-toxic-magenta outline-none hard-border text-white"
                                     >
                                         <option value="DOWNHILL">DOWNHILL</option>
                                         <option value="UPHILL">UPHILL</option>
                                         <option value="BOTH">BOTH</option>
+                                        <option value="MIXED">MIXED</option>
                                     </select>
                                 </div>
                                 <div>
                                     <label className="text-zinc-500 text-xs font-bold block mb-1">HOME MOUNTAIN</label>
                                     <input
                                         type="text"
-                                        value={profile.homeMountain}
-                                        onChange={(e) => setProfile({ ...profile, homeMountain: e.target.value })}
+                                        value={profile?.homeMountain || ""}
+                                        onChange={(e) => setProfile(prev => prev ? { ...prev, homeMountain: e.target.value } : null)}
                                         className="w-full bg-black border-2 border-zinc-700 p-2 text-sm focus:border-toxic-magenta outline-none hard-border text-white uppercase"
                                     />
                                 </div>
@@ -307,8 +295,8 @@ export default function ProfilePage() {
                                     <label className="text-zinc-500 text-xs font-bold block mb-1">AVATAR (emoji)</label>
                                     <input
                                         type="text"
-                                        value={profile.avatar}
-                                        onChange={(e) => setProfile({ ...profile, avatar: e.target.value })}
+                                        value={profile?.avatar || "🏎️"}
+                                        onChange={(e) => setProfile(prev => prev ? { ...prev, avatar: e.target.value } : null)}
                                         className="w-full bg-black border-2 border-zinc-700 p-2 text-sm focus:border-toxic-magenta outline-none hard-border text-center text-2xl"
                                         maxLength={2}
                                     />
@@ -318,11 +306,11 @@ export default function ProfilePage() {
                             <div className="space-y-3 mb-4 border-y-2 border-zinc-800 py-4">
                                 <div className="flex justify-between items-center">
                                     <span className="text-zinc-500 text-xs font-bold tracking-widest">SPECIALTY</span>
-                                    <span className="text-toxic-cyan font-bold text-xl">{profile.specialty}</span>
+                                    <span className="text-toxic-cyan font-bold text-xl">{profile?.specialty || "DOWNHILL"}</span>
                                 </div>
                                 <div className="flex justify-between items-center">
                                     <span className="text-zinc-500 text-xs font-bold tracking-widest">HOME REGION</span>
-                                    <span className="text-white font-bold text-xl uppercase">{profile.homeMountain}</span>
+                                    <span className="text-white font-bold text-xl uppercase">{profile?.homeMountain || "AKINA"}</span>
                                 </div>
                             </div>
                         )}

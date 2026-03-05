@@ -5,6 +5,9 @@ export type PlayerProfile = {
     credits: number;
     totalDistance: number; // in km
     updatedAt: string;
+    specialty?: "DOWNHILL" | "UPHILL" | "MIXED" | "BOTH";
+    homeMountain?: string;
+    avatar?: string;
 };
 
 const PROFILE_STORAGE_KEY = "projectd_profile";
@@ -26,7 +29,10 @@ export const getXpForCurrentLevel = (currentLevel: number): number => {
 
 export const getProfile = (): PlayerProfile => {
     if (typeof window === "undefined") {
-        return { driverName: "ANONYME", level: 1, xp: 0, credits: 0, totalDistance: 0, updatedAt: new Date().toISOString() };
+        return {
+            driverName: "ANONYME", level: 1, xp: 0, credits: 0, totalDistance: 0, updatedAt: new Date().toISOString(),
+            specialty: "DOWNHILL", homeMountain: "AKINA", avatar: "🏎️"
+        };
     }
 
     const saved = localStorage.getItem(PROFILE_STORAGE_KEY);
@@ -43,7 +49,10 @@ export const getProfile = (): PlayerProfile => {
         xp: 0,
         credits: 0,
         totalDistance: 0,
-        updatedAt: new Date().toISOString()
+        updatedAt: new Date().toISOString(),
+        specialty: "DOWNHILL",
+        homeMountain: "AKINA",
+        avatar: "🏎️"
     };
     saveProfile(newProfile);
     return newProfile;

@@ -327,7 +327,8 @@ export default function RouteBuilderPage() {
             setWaypoints(gpsTrack);
             setRouteGeometry(gpsTrack);
             setDistance(calculateStraightDistance(gpsTrack));
-            setStep(2); // Move to naming step
+            setSnapToRoad(false); // Force line-of-sight to prevent OSRM crash on dense tracks
+            setStep(3); // Move directly to naming step
         }
     };
 
@@ -401,7 +402,7 @@ export default function RouteBuilderPage() {
     };
 
     return (
-        <div className="h-screen w-full bg-black relative overflow-hidden font-pixel">
+        <div className="h-[calc(100vh-3.5rem)] w-full bg-black relative overflow-hidden font-pixel">
 
             {/* MAP (Full screen) */}
             <div className="absolute inset-0">
@@ -414,47 +415,61 @@ export default function RouteBuilderPage() {
                 />
             </div>
 
-            {/* HUD OVERLAY - Top */}
-            <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[1000]">
-                <div className="bg-black/90 backdrop-blur-md border-2 border-zinc-800 px-6 py-3 hard-border shadow-[0_0_15px_rgba(0,0,0,0.8)]">
-                    <h1 className="text-2xl font-bold text-toxic-magenta tracking-widest text-center uppercase text-shadow-neon glitch-hover">
-                        ROUTE BUILDER
-                    </h1>
-                    <div className="flex items-center justify-center gap-2 mt-2">
-                        {[1, 2, 3].map((s) => (
-                            <div
-                                key={s}
-                                className={`w-8 h-1 ${step >= s ? "bg-toxic-cyan shadow-[0_0_10px_rgba(0,255,255,0.8)]" : "bg-zinc-800"}`}
-                            />
-                        ))}
-                    </div>
+            {/* HUD OVERLAY - Top Left */}
+            <div className="absolute top-6 left-6 z-[1000] pointer-events-none drop-shadow-md">
+                <h1 className="text-xl font-bold text-white tracking-widest uppercase glitch-hover flex flex-col gap-1">
+                    <span className="text-zinc-500 text-[10px] tracking-widest">PROJECT D // SYSTEM</span>
+                    <span>ROUTE BUILDER_</span>
+                </h1>
+                <div className="flex items-center gap-2 mt-2">
+                    <span className="text-toxic-cyan text-[10px] uppercase">STATUS:</span>
+                    <span className="text-white text-[10px] uppercase">{mode} MODE - STAGE {step}</span>
                 </div>
             </div>
 
             {/* HUD OVERLAY - Stats */}
-            <div className="absolute top-4 right-4 z-[1000]">
-                <div className="bg-black/90 backdrop-blur-md border-2 border-zinc-800 p-4 hard-border shadow-[0_0_15px_rgba(0,0,0,0.8)] space-y-2">
-                    <div className="flex items-center gap-2 text-zinc-500 font-bold tracking-widest uppercase text-xs">
-                        <MapPin size={16} className="text-toxic-cyan" />
-                        <span className="text-white">{waypoints.length} WAYPOINTS</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-zinc-500 font-bold tracking-widest uppercase text-xs">
-                        <Ruler size={16} className="text-toxic-magenta" />
-                        <span className="text-toxic-yellow text-shadow-[0_0_10px_rgba(255,255,0,0.5)]">
-                            {isCalculating ? "..." : `${distance.toFixed(2)} KM`}
-                        </span>
-                    </div>
-                    {snapToRoad && (
-                        <div className="flex items-center gap-2 text-toxic-green text-[10px] font-bold tracking-widest uppercase">
-                            <Route size={12} />
-                            <span>SNAP TO ROAD</span>
-                        </div>
-                    )}
-                    <div className="border-t-2 border-zinc-800 pt-2 mt-2">
-                        <div className="text-zinc-500 text-[10px] font-bold tracking-widest uppercase">{selectedRegion.name}</div>
-                    </div>
+            <div className="absolute top-6 right-6 z-[1000] text-right pointer-events-none drop-shadow-md">
+                <div className="text-zinc-500 text-[10px] font-bold tracking-widest uppercase mb-2">{selectedRegion.name}</div>
+                <div className="flex justify-end items-center gap-2 text-sm font-bold tracking-widest uppercase">
+                    <span className="text-zinc-500">WPT_</span>
+                    <span className="text-white">{waypoints.length}</span>
                 </div>
+                <div className="flex justify-end items-center gap-2 text-sm font-bold tracking-widest uppercase">
+                    <span className="text-zinc-500">DST_</span>
+                    <span className="text-white">
+                        {isCalculating ? "CALC..." : `${distance.toFixed(2)} KM`}
+                    </span>
+                </div>
+                {snapToRoad && mode === "DRAW" && (
+                    <div className="text-toxic-green text-[10px] font-bold tracking-widest uppercase mt-2">
+                        OSRM_SNAP_ACTIVE
+                    </div>
+                )}
             </div>
+
+            {/* GPS RECENTER BUTTON */}
+            <button
+                onClick={() => {
+                    if (navigator.geolocation) {
+                        navigator.geolocation.getCurrentPosition(
+                            (position) => {
+                                setSelectedRegion((prev) => ({
+                                    ...prev,
+                                    center: [position.coords.latitude, position.coords.longitude],
+                                    zoom: 15
+                                }));
+                            },
+                            (error) => console.error("GPS Error", error),
+                            { enableHighAccuracy: true }
+                        );
+                    }
+                }}
+                className="absolute bottom-6 right-6 z-[1000] bg-black/40 border-[1px] border-zinc-800 p-3 text-toxic-cyan hover:bg-toxic-cyan hover:text-black transition-colors backdrop-blur-sm drop-shadow-md flex items-center justify-center gap-2"
+                title="Centrer sur ma position"
+            >
+                <Navigation2 size={16} />
+                <span className="text-[10px] uppercase font-bold tracking-widest hidden md:inline-block">[ LOCATE ]</span>
+            </button>
 
             {/* SIDE PANEL */}
             <AnimatePresence>
@@ -517,9 +532,8 @@ export default function RouteBuilderPage() {
                                         animate={{ opacity: 1 }}
                                         className="space-y-4"
                                     >
-                                        <div className="flex items-center gap-2 text-toxic-cyan font-bold tracking-widest uppercase text-shadow-[0_0_10px_rgba(0,255,255,0.5)]">
-                                            <Flag size={16} />
-                                            ÉTAPE 1 : CONFIGURATION
+                                        <div className="text-toxic-cyan font-bold tracking-widest uppercase text-[10px]">
+                                            {"// STAGE 1 : ROUTE CONF"}
                                         </div>
 
                                         {/* Région */}
@@ -634,9 +648,9 @@ export default function RouteBuilderPage() {
 
                                         <button
                                             onClick={() => setStep(2)}
-                                            className="w-full bg-toxic-cyan text-black hover:bg-white py-3 text-sm font-bold mt-4 hard-border transition-colors uppercase tracking-widest shadow-[0_0_15px_rgba(0,255,255,0.4)]"
+                                            className="w-full border-[1px] border-toxic-cyan text-toxic-cyan hover:bg-toxic-cyan hover:text-black py-3 text-[10px] font-bold mt-4 transition-colors uppercase tracking-widest"
                                         >
-                                            CONTINUER →
+                                            [ CONFIRM SETTINGS ]
                                         </button>
                                     </motion.div>
                                 )}
@@ -648,14 +662,13 @@ export default function RouteBuilderPage() {
                                         animate={{ opacity: 1 }}
                                         className="space-y-4"
                                     >
-                                        <div className="flex items-center gap-2 text-green-500 font-bold">
-                                            <Navigation2 size={16} />
-                                            MODE GPS EN DIRECT
+                                        <div className="text-toxic-green font-bold tracking-widest uppercase text-[10px]">
+                                            {"// GPS TELEMETRY"}
                                         </div>
 
-                                        <div className="bg-green-500/10 border border-green-500/30 rounded p-3 text-xs text-green-400">
-                                            <p className="font-bold mb-1">📍 Enregistrement GPS</p>
-                                            <p>Appuie sur DÉMARRER puis roule ! Le site enregistrera ton trajet en temps réel grâce au GPS de ton téléphone.</p>
+                                        <div className="border-[1px] border-toxic-green/30 bg-black/40 p-3 text-[10px] text-toxic-green tracking-widest uppercase">
+                                            <p className="font-bold mb-1">WARNING // LIVE TRACKING</p>
+                                            <p className="text-zinc-400">Press start and begin driving. Trajectory is recorded locally via device sensors.</p>
                                         </div>
 
                                         {/* GPS Error */}
@@ -709,19 +722,17 @@ export default function RouteBuilderPage() {
                                         {!isRecording ? (
                                             <button
                                                 onClick={startGpsTracking}
-                                                className="w-full flex items-center justify-center gap-3 py-4 bg-green-500 text-black font-bold text-lg rounded hover:bg-green-400 transition-colors"
+                                                className="w-full border-[1px] border-toxic-green text-toxic-green hover:bg-toxic-green hover:text-black font-bold text-[10px] py-3 uppercase tracking-widest transition-colors"
                                             >
-                                                <Navigation2 size={24} />
-                                                DÉMARRER L'ENREGISTREMENT
+                                                [ INIT TELEMETRY ]
                                             </button>
                                         ) : (
                                             <button
                                                 onClick={stopGpsTracking}
                                                 disabled={gpsTrack.length < 2}
-                                                className="w-full flex items-center justify-center gap-3 py-4 bg-red-500 text-white font-bold text-lg rounded hover:bg-red-400 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                                className="w-full border-[1px] border-red-500 text-red-500 hover:bg-red-500 hover:text-black font-bold text-[10px] py-3 disabled:opacity-50 disabled:cursor-not-allowed uppercase tracking-widest transition-colors"
                                             >
-                                                <StopCircle size={24} />
-                                                ARRÊTER ({gpsTrack.length} points)
+                                                [ STOP RUN - Pts: {gpsTrack.length} ]
                                             </button>
                                         )}
 
@@ -744,25 +755,25 @@ export default function RouteBuilderPage() {
                                         animate={{ opacity: 1 }}
                                         className="space-y-4"
                                     >
-                                        <div className="flex items-center gap-2 text-yellow-500 font-bold">
-                                            <Pencil size={16} />
-                                            ÉTAPE 2 : TRACER
+                                        <div className="text-toxic-yellow font-bold tracking-widest uppercase text-[10px]">
+                                            {"// STAGE 2 : MAP WAYPOINTS"}
                                         </div>
 
                                         {snapToRoad ? (
-                                            <div className="bg-green-500/10 border border-green-500/30 rounded p-3 text-xs text-green-400">
-                                                <Route size={14} className="inline mr-2" />
-                                                Mode <strong>SNAP TO ROAD</strong> activé — le tracé suit automatiquement les routes !
+                                            <div className="border-[1px] border-toxic-green/30 bg-black/40 p-3 text-[10px] text-toxic-green tracking-widest uppercase">
+                                                <p className="font-bold mb-1">OSRM SNAP TO ROAD // ONLINE</p>
+                                                <p className="text-zinc-400">Algorithm is routing between waypoints.</p>
                                             </div>
                                         ) : (
-                                            <p className="text-zinc-500 text-xs">
-                                                Mode ligne droite — le tracé relie les points directement.
-                                            </p>
+                                            <div className="border-[1px] border-zinc-700/50 bg-black/40 p-3 text-[10px] text-zinc-400 tracking-widest uppercase">
+                                                <p className="font-bold mb-1">DIRECT LINE // ONLINE</p>
+                                                <p className="text-zinc-500">Waypoints are connected directly.</p>
+                                            </div>
                                         )}
 
                                         {isCalculating && (
-                                            <div className="text-yellow-500 text-xs animate-pulse">
-                                                Calcul de l&apos;itinéraire...
+                                            <div className="text-toxic-yellow text-[10px] font-bold animate-pulse tracking-widest uppercase">
+                                                {"// PROCESSING ROUTING ALGORITHM..."}
                                             </div>
                                         )}
 
@@ -771,31 +782,31 @@ export default function RouteBuilderPage() {
                                             <button
                                                 onClick={undoLastWaypoint}
                                                 disabled={waypoints.length === 0}
-                                                className="flex items-center justify-center gap-2 py-3 bg-black border-2 border-zinc-800 hover:bg-zinc-800 hover:text-white hover:border-zinc-500 disabled:opacity-50 disabled:cursor-not-allowed text-xs font-bold transition-colors hard-border uppercase tracking-widest text-zinc-400"
+                                                className="py-2 border-[1px] border-zinc-700 text-zinc-500 hover:border-zinc-400 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed text-[10px] font-bold transition-colors tracking-widest uppercase bg-transparent hover:bg-zinc-800"
                                             >
-                                                <Undo2 size={16} /> ANNULER
+                                                [ UNDO WPT ]
                                             </button>
                                             <button
                                                 onClick={resetRoute}
                                                 disabled={waypoints.length === 0}
-                                                className="flex items-center justify-center gap-2 py-3 bg-black border-2 border-red-500/50 text-red-500 hover:bg-red-500 hover:text-black disabled:opacity-50 disabled:cursor-not-allowed text-xs font-bold transition-colors hard-border uppercase tracking-widest shadow-[0_0_10px_rgba(239,68,68,0.2)] disabled:shadow-none"
+                                                className="py-2 border-[1px] border-red-500 text-red-500 hover:bg-red-500 hover:text-black disabled:opacity-50 disabled:cursor-not-allowed text-[10px] font-bold transition-colors tracking-widest uppercase bg-transparent"
                                             >
-                                                <RotateCcw size={16} /> RESET
+                                                [ CLEAR ROUTE ]
                                             </button>
                                         </div>
 
                                         {/* Waypoints List */}
                                         {waypoints.length > 0 && (
-                                            <div className="bg-black border-2 border-zinc-800 hard-border p-3 max-h-32 overflow-y-auto">
-                                                <div className="text-zinc-500 text-[10px] font-bold tracking-widest uppercase mb-2">WAYPOINTS</div>
+                                            <div className="border-[1px] border-zinc-800 bg-black/20 p-3 max-h-32 overflow-y-auto font-pixel">
+                                                <div className="text-zinc-600 text-[10px] font-bold tracking-widest uppercase mb-2 border-b-[1px] border-zinc-800 pb-1">SEQ_WAYPOINTS</div>
                                                 {waypoints.map((pt, i) => (
-                                                    <div key={i} className="flex items-center gap-2 text-xs py-1.5 border-b border-zinc-800 last:border-0">
-                                                        <span className={`w-5 h-5 flex items-center justify-center text-[10px] font-bold hard-border border-2 ${i === 0 ? "bg-toxic-green/20 text-toxic-green border-toxic-green shadow-[0_0_5px_rgba(0,255,65,0.5)]" : i === waypoints.length - 1 ? "bg-red-500/20 text-red-500 border-red-500 shadow-[0_0_5px_rgba(239,68,68,0.5)]" : "bg-toxic-yellow/20 text-toxic-yellow border-toxic-yellow"
-                                                            }`}>
-                                                            {i + 1}
+                                                    <div key={i} className="flex items-center gap-3 text-[10px] py-1 border-b-[1px] border-zinc-800/50 last:border-0 opacity-80 hover:opacity-100 transition-opacity">
+                                                        <span className={`${i === 0 ? "text-toxic-green" : i === waypoints.length - 1 ? "text-red-500" : "text-toxic-yellow"
+                                                            } w-4`}>
+                                                            [{i + 1}]
                                                         </span>
-                                                        <span className="text-zinc-400 font-pixel text-xs tracking-widest">
-                                                            {pt[0].toFixed(4)}, {pt[1].toFixed(4)}
+                                                        <span className="text-zinc-400 tracking-widest">
+                                                            N:{pt[0].toFixed(4)} E:{pt[1].toFixed(4)}
                                                         </span>
                                                     </div>
                                                 ))}
@@ -805,16 +816,16 @@ export default function RouteBuilderPage() {
                                         <div className="flex gap-2 mt-4">
                                             <button
                                                 onClick={() => setStep(1)}
-                                                className="flex-1 bg-black border-2 border-zinc-800 hover:bg-zinc-800 text-zinc-400 hover:text-white py-3 text-sm font-bold transition-colors hard-border uppercase tracking-widest"
+                                                className="flex-1 py-3 text-[10px] font-bold tracking-widest uppercase text-zinc-500 hover:text-white border-[1px] border-zinc-800 hover:border-zinc-500 transition-colors"
                                             >
-                                                ← RETOUR
+                                                [ &lt; RETOUR ]
                                             </button>
                                             <button
                                                 onClick={() => setStep(3)}
                                                 disabled={waypoints.length < 2}
-                                                className="flex-1 bg-toxic-cyan text-black hover:bg-white disabled:bg-zinc-800 disabled:border-zinc-800 disabled:text-zinc-500 disabled:shadow-none py-3 text-sm font-bold transition-colors hard-border uppercase tracking-widest shadow-[0_0_15px_rgba(0,255,255,0.4)] border-2 border-toxic-cyan"
+                                                className="flex-1 border-[1px] border-toxic-cyan text-toxic-cyan hover:bg-toxic-cyan hover:text-black py-3 text-[10px] font-bold transition-colors uppercase tracking-widest disabled:opacity-50 disabled:border-zinc-800 disabled:text-zinc-600 disabled:hover:bg-transparent"
                                             >
-                                                CONTINUER →
+                                                [ BUILD FINAL ]
                                             </button>
                                         </div>
                                     </motion.div>
@@ -827,37 +838,36 @@ export default function RouteBuilderPage() {
                                         animate={{ opacity: 1 }}
                                         className="space-y-4"
                                     >
-                                        <div className="flex items-center gap-2 text-toxic-green font-bold text-shadow-[0_0_10px_rgba(0,255,65,0.5)] uppercase tracking-widest">
-                                            <Save size={16} />
-                                            ÉTAPE 3 : FINALISER
+                                        <div className="text-toxic-green font-bold tracking-widest uppercase text-[10px]">
+                                            {"// STAGE 3 : FINAL SAVE"}
                                         </div>
 
                                         {/* Résumé */}
-                                        <div className="bg-black border-2 border-zinc-800 hard-border p-4 space-y-3 font-bold uppercase tracking-widest">
-                                            <div className="flex justify-between text-xs">
-                                                <span className="text-zinc-500">DISTANCE</span>
-                                                <span className="text-toxic-yellow text-shadow-[0_0_5px_rgba(255,255,0,0.5)]">{distance.toFixed(2)} KM</span>
+                                        <div className="border-[1px] border-zinc-800 bg-black/20 p-4 space-y-2 font-pixel tracking-widest uppercase">
+                                            <div className="flex justify-between text-[10px] border-b-[1px] border-zinc-800/50 pb-1">
+                                                <span className="text-zinc-600">DST_CALC</span>
+                                                <span className="text-toxic-yellow">{distance.toFixed(2)} KM</span>
                                             </div>
-                                            <div className="flex justify-between text-xs">
-                                                <span className="text-zinc-500">WAYPOINTS</span>
+                                            <div className="flex justify-between text-[10px] border-b-[1px] border-zinc-800/50 pb-1">
+                                                <span className="text-zinc-600">WPT_SEQ</span>
                                                 <span className="text-white">{waypoints.length}</span>
                                             </div>
-                                            <div className="flex justify-between text-xs">
-                                                <span className="text-zinc-500">TYPE</span>
-                                                <span className="text-white uppercase px-2 bg-toxic-magenta/20 border border-toxic-magenta text-toxic-magenta">{routeType}</span>
+                                            <div className="flex justify-between text-[10px] border-b-[1px] border-zinc-800/50 pb-1">
+                                                <span className="text-zinc-600">TERRAIN</span>
+                                                <span className="text-toxic-magenta">[{routeType}]</span>
                                             </div>
-                                            <div className="flex justify-between text-xs">
-                                                <span className="text-zinc-500">DIFFICULTÉ</span>
-                                                <span className={`px-2 text-[10px] hard-border border-2 ${difficultyColors[difficulty].split(' ')[0]} ${difficultyColors[difficulty].split(' ')[1]}`}>{difficulty}</span>
+                                            <div className="flex justify-between text-[10px] border-b-[1px] border-zinc-800/50 pb-1">
+                                                <span className="text-zinc-600">DIFF</span>
+                                                <span className={difficultyColors[difficulty].split(' ')[0]}>[{difficulty}]</span>
                                             </div>
-                                            <div className="flex justify-between text-xs">
-                                                <span className="text-zinc-500">RÉGION</span>
-                                                <span className="text-white bg-black border border-zinc-800 px-2">{selectedRegion.name}</span>
+                                            <div className="flex justify-between text-[10px] border-b-[1px] border-zinc-800/50 pb-1">
+                                                <span className="text-zinc-600">ZONE</span>
+                                                <span className="text-zinc-400">{selectedRegion.name}</span>
                                             </div>
-                                            <div className="flex justify-between text-xs">
-                                                <span className="text-zinc-500">MODE</span>
+                                            <div className="flex justify-between text-[10px] border-b-[1px] border-zinc-800/50 pb-1">
+                                                <span className="text-zinc-600">ROUTING</span>
                                                 <span className={snapToRoad ? "text-toxic-green" : "text-toxic-yellow"}>
-                                                    {snapToRoad ? "ROUTE RÉELLE" : "LIGNE DROITE"}
+                                                    [{snapToRoad ? "OSRM_SNAP" : "DIRECT_LINE"}]
                                                 </span>
                                             </div>
                                         </div>
@@ -865,7 +875,7 @@ export default function RouteBuilderPage() {
                                         <input
                                             type="text"
                                             placeholder="NOM DU TRACÉ (EX: COL DE TURINI)"
-                                            className="w-full bg-black border-2 border-zinc-800 p-3 text-white font-bold uppercase tracking-widest focus:border-toxic-cyan outline-none hard-border transition-colors"
+                                            className="w-full bg-black/40 border-[1px] border-zinc-700 p-3 text-white text-[10px] font-pixel uppercase tracking-widest focus:border-toxic-green outline-none transition-colors"
                                             value={routeName}
                                             onChange={(e) => setRouteName(e.target.value)}
                                         />
@@ -873,16 +883,16 @@ export default function RouteBuilderPage() {
                                         <div className="flex gap-2">
                                             <button
                                                 onClick={() => setStep(2)}
-                                                className="flex-1 bg-black border-2 border-zinc-800 hover:bg-zinc-800 text-zinc-400 hover:text-white py-3 text-sm font-bold transition-colors hard-border uppercase tracking-widest"
+                                                className="flex-1 py-3 text-[10px] font-bold tracking-widest uppercase text-zinc-500 hover:text-white border-[1px] border-zinc-800 hover:border-zinc-500 transition-colors"
                                             >
-                                                ← RETOUR
+                                                [ &lt; RETOUR ]
                                             </button>
                                             <button
                                                 onClick={saveRoute}
                                                 disabled={!routeName.trim()}
-                                                className="flex-1 bg-toxic-green text-black hover:bg-white disabled:opacity-50 disabled:cursor-not-allowed py-3 text-sm font-bold flex items-center justify-center gap-2 hard-border uppercase tracking-widest transition-colors shadow-[0_0_15px_rgba(0,255,65,0.4)] disabled:shadow-none border-2 border-toxic-green disabled:border-zinc-800 disabled:bg-zinc-800 disabled:text-zinc-500"
+                                                className="flex-1 border-[1px] border-toxic-green text-toxic-green hover:bg-toxic-green hover:text-black font-bold text-[10px] py-3 uppercase tracking-widest transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:border-zinc-800 disabled:text-zinc-600 disabled:hover:bg-transparent"
                                             >
-                                                <Save size={16} /> SAUVEGARDER
+                                                [ SAVE ROUTE_ ]
                                             </button>
                                         </div>
                                     </motion.div>

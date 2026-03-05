@@ -82,7 +82,7 @@ export default function ConquestPage() {
                                             stroke="#00ffff"
                                             strokeWidth="2"
                                             strokeOpacity="0.6"
-                                            points={route.points.slice(0, 20).map((p, i) => {
+                                            points={(route.points || []).slice(0, 20).map((p, i) => {
                                                 const x = 20 + (i * 12);
                                                 const y = 60 + Math.sin(i * 0.5) * 20;
                                                 return `${x},${y}`;
@@ -107,7 +107,7 @@ export default function ConquestPage() {
                                 <div className="flex items-center gap-4 text-xs font-bold text-zinc-500 mb-4 tracking-widest uppercase">
                                     <div className="flex items-center gap-1">
                                         <MapPin size={12} className="text-toxic-magenta" />
-                                        {route.points.length} pts
+                                        {route.points?.length || 0} pts
                                     </div>
                                     <div className="flex items-center gap-1">
                                         <Ruler size={12} className="text-toxic-cyan" />

@@ -104,7 +104,7 @@ export default function GhostsPage() {
                                 <MapPin size={24} className="text-toxic-yellow" />
                                 {tougeName}
                                 <span className="text-zinc-500 text-sm md:text-base font-normal ml-2">
-                                    // {tougeGhosts.length} RUNS
+                                    {"// "} {tougeGhosts.length} RUNS
                                 </span>
                             </h2>
 
@@ -124,9 +124,9 @@ export default function GhostsPage() {
                                             <div className="flex items-center gap-4">
                                                 {/* Rank Badge */}
                                                 <div className={`w-12 h-12 flex items-center justify-center font-bold text-xl hard-border border-2 ${index === 0 ? "bg-toxic-yellow/20 text-toxic-yellow border-toxic-yellow shadow-[0_0_10px_rgba(255,255,0,0.4)]" :
-                                                        index === 1 ? "bg-zinc-400/20 text-zinc-300 border-zinc-400" :
-                                                            index === 2 ? "bg-orange-600/20 text-orange-500 border-orange-600" :
-                                                                "bg-black text-zinc-600 border-zinc-800"
+                                                    index === 1 ? "bg-zinc-400/20 text-zinc-300 border-zinc-400" :
+                                                        index === 2 ? "bg-orange-600/20 text-orange-500 border-orange-600" :
+                                                            "bg-black text-zinc-600 border-zinc-800"
                                                     }`}>
                                                     #{index + 1}
                                                 </div>
