@@ -12,6 +12,7 @@ interface MapComponentProps {
     onMapClick?: (latlng: LatLng) => void;
     center?: LatLng;
     zoom?: number;
+    userLocation?: LatLng | null;
 }
 
 // Component to handle map clicks
@@ -45,7 +46,8 @@ export default function MapComponent({
     routeGeometry,
     onMapClick,
     center,
-    zoom = 8
+    zoom = 8,
+    userLocation = null
 }: MapComponentProps) {
     const defaultCenter: LatLng = center || [43.9367, 7.1186];
     const defaultZoom = zoom;
@@ -129,6 +131,35 @@ export default function MapComponent({
                     }}
                 />
             ))}
+
+            {/* GPS User Location Marker */}
+            {userLocation && (
+                <>
+                    {/* Pulsing ring */}
+                    <CircleMarker
+                        center={userLocation}
+                        radius={20}
+                        pathOptions={{
+                            color: "#06b6d4", // toxic-cyan equivalent
+                            fillColor: "transparent",
+                            fillOpacity: 0,
+                            weight: 2,
+                            className: "animate-ping opacity-75"
+                        }}
+                    />
+                    {/* Core dot */}
+                    <CircleMarker
+                        center={userLocation}
+                        radius={6}
+                        pathOptions={{
+                            color: "#ffffff",
+                            fillColor: "#ef4444", // red-500
+                            fillOpacity: 1,
+                            weight: 2,
+                        }}
+                    />
+                </>
+            )}
         </MapContainer>
     );
 }

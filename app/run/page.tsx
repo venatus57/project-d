@@ -63,7 +63,7 @@ export default function RunPage() {
     const [maxSpeed, setMaxSpeed] = useState<number>(0);
 
     // Rewards state
-    const [runRewards, setRunRewards] = useState<{ xp: number, cr: number, ghostId: string } | null>(null);
+    const [runRewards, setRunRewards] = useState<{ ghostId: string } | null>(null);
 
     // Refs
     const watchIdRef = useRef<number | null>(null);
@@ -235,15 +235,11 @@ export default function RunPage() {
             ghosts.push(ghostRun);
             localStorage.setItem("projectd_ghosts", JSON.stringify(ghosts));
 
-            // Award XP and CR based on distance and speed and weather
-            let weatherBonus = 1.0;
-            if (selectedWeather === "PLUIE") weatherBonus = 1.2; // 20% bonus for rain
-            if (selectedWeather === "NUIT") weatherBonus = 1.1;  // 10% bonus for night
+            // Save run stats to profile
+            addRewards(totalDistance, avgSpeed);
 
-            const rewards = addRewards(totalDistance, avgSpeed, weatherBonus);
-
-            // Show rewards modal instead of redirecting immediately
-            setRunRewards({ xp: rewards.gainedXp, cr: rewards.gainedCr, ghostId: ghostRun.id });
+            // Show summary modal instead of redirecting immediately
+            setRunRewards({ ghostId: ghostRun.id });
         }
     };
 
@@ -366,8 +362,7 @@ export default function RunPage() {
                                         <div className={`text-[10px] md:text-xs font-bold uppercase tracking-widest`}>
                                             {WEATHER_INFO[weather].label}
                                         </div>
-                                        {weather === "PLUIE" && <div className="text-[8px] md:text-[10px] text-toxic-cyan mt-1 font-bold tracking-widest">+20% XP/CR</div>}
-                                        {weather === "NUIT" && <div className="text-[8px] md:text-[10px] text-toxic-magenta mt-1 font-bold tracking-widest">+10% XP/CR</div>}
+
                                     </button>
                                 );
                             })}
@@ -491,28 +486,17 @@ export default function RunPage() {
                         >
                             <Trophy size={48} className="text-toxic-yellow mx-auto mb-4" />
                             <h2 className="text-2xl md:text-3xl font-bold uppercase tracking-widest text-toxic-yellow mb-2 text-shadow-[0_0_10px_rgba(255,255,0,0.5)] glitch-hover">
-                                TELEMETRY SAVED
+                                RUN TERMINÉ
                             </h2>
                             <p className="text-zinc-500 text-xs md:text-sm uppercase tracking-widest mb-8 border-b-2 border-zinc-800 pb-4">
-                                Données de télémétrie transférées au Network.
+                                Données de télémétrie transférées au Network. Distance ajoutée à l'odomètre.
                             </p>
-
-                            <div className="grid grid-cols-2 gap-4 mb-8">
-                                <div className="bg-zinc-950 border-2 border-zinc-800 hard-border p-3">
-                                    <div className="text-zinc-500 text-[10px] uppercase tracking-widest mb-1">EXPÉRIENCE</div>
-                                    <div className="text-xl md:text-2xl font-bold text-toxic-yellow">+{runRewards.xp} <span className="text-xs">XP</span></div>
-                                </div>
-                                <div className="bg-zinc-950 border-2 border-zinc-800 hard-border p-3">
-                                    <div className="text-zinc-500 text-[10px] uppercase tracking-widest mb-1">CRÉDITS</div>
-                                    <div className="text-xl md:text-2xl font-bold text-toxic-green">+{runRewards.cr} <span className="text-xs">CR</span></div>
-                                </div>
-                            </div>
 
                             <button
                                 onClick={() => router.push(`/ghosts/detail?id=${runRewards.ghostId}`)}
-                                className="w-full py-4 bg-toxic-yellow border-2 border-toxic-yellow text-black uppercase tracking-widest font-bold text-sm md:text-lg hover:bg-white hard-border transition-colors shadow-[0_0_15px_rgba(255,255,0,0.4)]"
+                                className="w-full py-4 bg-toxic-yellow border-2 border-toxic-yellow text-black uppercase tracking-widest font-bold text-sm md:text-lg hover:bg-white hard-border transition-colors shadow-[0_0_15px_rgba(255,255,0,0.4)] mt-4"
                             >
-                                CONTINUER ({selectedWeather === "PLUIE" ? "BONUS PLUIE" : selectedWeather === "NUIT" ? "BONUS NUIT" : "BASE"}) →
+                                ANALYSER SA TÉLÉMÉTRIE →
                             </button>
                         </motion.div>
                     </motion.div>

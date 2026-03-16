@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Car, Mountain, User, Route, Trophy } from "lucide-react";
-import { getProfile, PlayerProfile, getXpForNextLevel, getXpForCurrentLevel } from "./lib/profile";
+import { getProfile, PlayerProfile } from "./lib/profile";
 
 export default function Home() {
   const [profile, setProfile] = useState<PlayerProfile | null>(null);
@@ -11,13 +11,6 @@ export default function Home() {
   useEffect(() => {
     setProfile(getProfile());
   }, []);
-
-  // XP Progress Calculation
-  const currentLevelXp = profile ? getXpForCurrentLevel(profile.level) : 0;
-  const nextLevelXp = profile ? getXpForNextLevel(profile.level) : 100;
-  const xpInCurrentLevel = profile ? profile.xp - currentLevelXp : 0;
-  const xpNeededForNext = nextLevelXp - currentLevelXp;
-  const progressPercent = Math.min(100, Math.max(0, (xpInCurrentLevel / xpNeededForNext) * 100));
 
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-100 font-mono flex flex-col items-center justify-center p-8">
@@ -41,42 +34,15 @@ export default function Home() {
 
         <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
           {/* Driver Info */}
-          <div className="border-[1px] border-zinc-800 p-3 bg-zinc-950">
-            <div className="text-toxic-cyan text-xs mb-1 font-bold tracking-widest">CURRENT DRIVER</div>
-            <div className="text-3xl font-bold text-white uppercase glitch-hover">{profile?.driverName || "ANONYME"}</div>
+          <div className="flex-1 border-[1px] border-zinc-800 p-4 bg-zinc-950">
+            <div className="text-toxic-cyan text-xs mb-1 font-bold tracking-widest">DRIVING LICENSE / CURRENT USER</div>
+            <div className="text-4xl font-bold text-white uppercase glitch-hover">{profile?.driverName || "ANONYME"}</div>
           </div>
 
-          {/* Level & XP Bar */}
-          <div className="flex-1 max-w-md border-[1px] border-zinc-800 p-3 bg-zinc-950">
-            <div className="flex justify-between items-end mb-2">
-              <div className="text-toxic-magenta font-bold italic text-xl">
-                LVL <span className="text-4xl shadow-toxic-magenta">{profile?.level || 1}</span>
-              </div>
-              <div className="text-zinc-500 text-sm font-bold">
-                EXP: <span className="text-white">{profile?.xp || 0}</span> / {nextLevelXp}
-              </div>
-            </div>
-            {/* Progress Bar Container */}
-            <div className="h-4 w-full bg-black border border-zinc-700 overflow-hidden">
-              <div
-                className="h-full bg-toxic-magenta shadow-[0_0_10px_rgba(255,0,255,0.8)] transition-all duration-1000 ease-out flex items-center justify-end px-1"
-                style={{ width: `${progressPercent}%` }}
-              >
-                {progressPercent > 10 && <span className="text-[10px] text-white font-bold leading-none">{Math.round(progressPercent)}%</span>}
-              </div>
-            </div>
-          </div>
-
-          {/* Currencies & Stats */}
-          <div className="flex flex-row md:flex-col gap-4 text-right">
-            <div className="border-[1px] border-zinc-800 p-2 bg-zinc-950 min-w-[120px]">
-              <div className="text-zinc-500 text-xs font-bold">CREDITS</div>
-              <div className="text-toxic-green font-bold text-2xl">{profile?.credits.toLocaleString() || 0} <span className="text-sm">CR</span></div>
-            </div>
-            <div className="border-[1px] border-zinc-800 p-2 bg-zinc-950 min-w-[120px]">
-              <div className="text-zinc-500 text-xs font-bold">ODOMETER</div>
-              <div className="text-white font-bold text-xl">{profile?.totalDistance.toFixed(1) || "0.0"} <span className="text-sm text-zinc-500">km</span></div>
-            </div>
+          {/* Odometer Stats */}
+          <div className="flex-1 border-[1px] border-zinc-800 p-4 bg-zinc-950 text-right">
+            <div className="text-zinc-500 text-xs font-bold tracking-widest">LIFETIME ODOMETER</div>
+            <div className="text-toxic-green font-bold text-4xl">{profile?.totalDistance.toFixed(1) || "0.0"} <span className="text-lg text-zinc-500">KM</span></div>
           </div>
         </div>
       </div>

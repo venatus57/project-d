@@ -412,6 +412,7 @@ export default function RouteBuilderPage() {
                     onMapClick={mode === "DRAW" && step >= 2 ? addWaypoint : undefined}
                     center={selectedRegion.center}
                     zoom={selectedRegion.zoom}
+                    userLocation={currentPosition}
                 />
             </div>
 
@@ -453,9 +454,11 @@ export default function RouteBuilderPage() {
                     if (navigator.geolocation) {
                         navigator.geolocation.getCurrentPosition(
                             (position) => {
+                                const newLoc: LatLng = [position.coords.latitude, position.coords.longitude];
+                                setCurrentPosition(newLoc);
                                 setSelectedRegion((prev) => ({
                                     ...prev,
-                                    center: [position.coords.latitude, position.coords.longitude],
+                                    center: newLoc,
                                     zoom: 15
                                 }));
                             },

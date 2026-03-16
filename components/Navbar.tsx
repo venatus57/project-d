@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, Car, Mountain, User, ChevronLeft, Route, Trophy, Play, Menu, X } from "lucide-react";
+import { Home, Car, Mountain, User, ChevronLeft, Route, Trophy, Play, Menu, X, Map } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 const navItems = [
@@ -14,6 +14,7 @@ const navItems = [
     { href: "/run", label: "RUN", icon: Play },
     { href: "/ghosts", label: "GHOSTS", icon: Trophy },
     { href: "/conquest", label: "CONQUEST", icon: Route },
+    { href: "/map", label: "MAP", icon: Map },
 ];
 
 export function Navbar() {
