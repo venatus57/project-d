@@ -32,7 +32,7 @@ export default function ConquestPage() {
     };
 
     return (
-        <div className="min-h-screen bg-black text-zinc-100 p-8 font-pixel">
+        <div className="min-h-screen bg-black text-zinc-100 p-8 pt-20 font-pixel">
 
             {/* HEADER */}
             <header className="mb-12 border-b-2 border-zinc-800 pb-4">

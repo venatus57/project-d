@@ -107,7 +107,7 @@ export default function CarsPage() {
     };
 
     return (
-        <div className="min-h-screen bg-black text-zinc-100 p-8 font-pixel">
+        <div className="min-h-screen bg-black text-zinc-100 p-8 pt-20 font-pixel">
 
             {/* Header */}
             <header className="mb-8 border-b-2 border-zinc-800 pb-4">

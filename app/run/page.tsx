@@ -246,7 +246,7 @@ export default function RunPage() {
     // Setup screen
     if (!isSetupComplete) {
         return (
-            <div className="min-h-screen bg-black text-white p-4 md:p-8 font-pixel">
+            <div className="min-h-[100dvh] bg-black text-white p-4 md:p-8 pt-20 md:pt-24 font-pixel flex flex-col">
                 {/* Header */}
                 <header className="mb-8 border-b-2 border-zinc-800 pb-4">
                     <Link href="/" className="inline-flex text-zinc-500 hover:text-toxic-cyan text-sm items-center gap-2 mb-4 uppercase tracking-widest hard-border px-3 py-1 border-2 border-transparent hover:border-toxic-cyan transition-colors">
