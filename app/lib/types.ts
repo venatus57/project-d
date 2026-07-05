@@ -71,6 +71,19 @@ export type GhostRun = {
     driverName: string;
 };
 
+// --- USER ROUTE (Route Builder output) ---
+export type UserRoute = {
+    id: string;
+    name: string;
+    points: [number, number][];
+    routeGeometry?: [number, number][];
+    distance: number;
+    createdAt: string;
+    type: "DOWNHILL" | "UPHILL" | "MIXED";
+    difficulty: "EASY" | "MEDIUM" | "HARD" | "LEGENDARY";
+    region: string;
+};
+
 // --- STORAGE KEYS ---
 export const STORAGE_KEYS = {
     CARS: "projectd_cars",

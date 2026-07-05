@@ -1,24 +1,24 @@
-﻿"use client";
+"use client";
 
 import { useState, useEffect, useRef } from "react";
-import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import {
-    ArrowLeft, Play, Pause, RotateCcw, Car as CarIcon,
-    MapPin, Timer, Gauge, Trophy, Cloud
+    ArrowLeft, Play, Pause, RotateCcw, Car as CarIcon, MapPin, Gauge, Trophy,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { GhostRun, WEATHER_INFO, LatLng } from "../../lib/types";
+import { loadGhosts } from "../../lib/storage";
+import { formatTime, formatDate } from "../../lib/format";
+import { BtnLink } from "@/components/ui";
 
-// Dynamic map import
 const GhostReplayMap = dynamic(() => import("./GhostReplayMap"), {
     ssr: false,
     loading: () => (
-        <div className="w-full h-full bg-black flex items-center justify-center font-pixel">
-            <div className="text-toxic-cyan text-xl animate-pulse glitch-hover">LOADING REPLAY...</div>
+        <div className="w-full h-full grid place-items-center">
+            <div className="kicker text-ice animate-pulse">Chargement du replay…</div>
         </div>
-    )
+    ),
 });
 
 interface GhostDetailClientProps {
@@ -26,26 +26,22 @@ interface GhostDetailClientProps {
 }
 
 export default function GhostDetailClient({ id }: GhostDetailClientProps) {
-    const router = useRouter();
     const [ghost, setGhost] = useState<GhostRun | null>(null);
+    const [notFound, setNotFound] = useState(false);
 
     // Replay state
     const [isPlaying, setIsPlaying] = useState(false);
     const [currentIndex, setCurrentIndex] = useState(0);
     const [playbackSpeed, setPlaybackSpeed] = useState(1);
-    const animationRef = useRef<NodeJS.Timeout | null>(null);
+    const animationRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-    // Load ghost
     useEffect(() => {
-        const savedGhosts = localStorage.getItem("projectd_ghosts");
-        if (savedGhosts) {
-            const ghosts: GhostRun[] = JSON.parse(savedGhosts);
-            const found = ghosts.find(g => g.id === id);
-            if (found) setGhost(found);
-        }
+        const found = loadGhosts().find((g) => g.id === id);
+        if (found && found.points.length > 0) setGhost(found);
+        else setNotFound(true);
     }, [id]);
 
-    // Playback animation
+    // Playback loop
     useEffect(() => {
         if (isPlaying && ghost) {
             const points = ghost.points;
@@ -53,33 +49,20 @@ export default function GhostDetailClient({ id }: GhostDetailClientProps) {
                 setIsPlaying(false);
                 return;
             }
-
-            const currentPoint = points[currentIndex];
-            const nextPoint = points[currentIndex + 1];
-            const timeDiff = (nextPoint.timestamp - currentPoint.timestamp) / playbackSpeed;
-
+            const timeDiff = (points[currentIndex + 1].timestamp - points[currentIndex].timestamp) / playbackSpeed;
             animationRef.current = setTimeout(() => {
-                setCurrentIndex(prev => prev + 1);
-            }, Math.max(timeDiff, 50)); // Min 50ms between updates
+                setCurrentIndex((prev) => prev + 1);
+            }, Math.min(Math.max(timeDiff, 30), 2000));
         }
-
         return () => {
             if (animationRef.current) clearTimeout(animationRef.current);
         };
     }, [isPlaying, currentIndex, ghost, playbackSpeed]);
 
-    const formatTime = (ms: number): string => {
-        const minutes = Math.floor(ms / 60000);
-        const seconds = Math.floor((ms % 60000) / 1000);
-        const milliseconds = Math.floor((ms % 1000) / 10);
-        return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}.${milliseconds.toString().padStart(2, '0')}`;
-    };
-
     const togglePlay = () => {
-        if (currentIndex >= (ghost?.points.length || 1) - 1) {
-            setCurrentIndex(0);
-        }
-        setIsPlaying(!isPlaying);
+        if (!ghost) return;
+        if (currentIndex >= ghost.points.length - 1) setCurrentIndex(0);
+        setIsPlaying((v) => !v);
     };
 
     const restart = () => {
@@ -87,169 +70,196 @@ export default function GhostDetailClient({ id }: GhostDetailClientProps) {
         setIsPlaying(false);
     };
 
+    if (notFound) {
+        return (
+            <div className="map-screen grid place-items-center">
+                <div className="text-center">
+                    <div className="kicker text-accent mb-4">Erreur 404</div>
+                    <p className="font-display font-bold uppercase tracking-widest text-white text-xl mb-6">
+                        Ghost introuvable
+                    </p>
+                    <BtnLink href="/ghosts" variant="outline">
+                        <ArrowLeft size={16} /> Retour aux ghosts
+                    </BtnLink>
+                </div>
+            </div>
+        );
+    }
+
     if (!ghost) {
         return (
-            <div className="min-h-screen bg-black text-red-500 flex items-center justify-center font-pixel uppercase tracking-widest text-xl">
-                <div className="animate-pulse">Ghost introuvable...</div>
+            <div className="map-screen grid place-items-center">
+                <div className="kicker text-ice animate-pulse">Chargement…</div>
             </div>
         );
     }
 
     const currentPoint = ghost.points[currentIndex];
     const currentPosition: LatLng = [currentPoint.lat, currentPoint.lng];
-    const ghostPath: LatLng[] = ghost.points.slice(0, currentIndex + 1).map(p => [p.lat, p.lng]);
-    const progress = (currentIndex / (ghost.points.length - 1)) * 100;
+    const ghostPath: LatLng[] = ghost.points.slice(0, currentIndex + 1).map((p) => [p.lat, p.lng]);
+    const progress = ghost.points.length > 1 ? (currentIndex / (ghost.points.length - 1)) * 100 : 100;
 
     return (
-        <div className="h-[100dvh] w-full bg-black relative overflow-hidden font-pixel">
-
-            {/* Map (full screen) */}
-            <div className="absolute inset-0 top-24 md:top-24 bottom-32 md:bottom-24">
+        <div className="map-screen">
+            {/* Map */}
+            <div className="absolute inset-0">
                 <GhostReplayMap
                     ghostPath={ghostPath}
-                    fullPath={ghost.points.map(p => [p.lat, p.lng] as LatLng)}
+                    fullPath={ghost.points.map((p) => [p.lat, p.lng] as LatLng)}
                     currentPosition={currentPosition}
                 />
             </div>
 
-            {/* HUD - Top Info Bar */}
+            {/* ===== TOP HUD ===== */}
             <motion.div
-                initial={{ y: -50, opacity: 0 }}
+                initial={{ y: -30, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
-                className="absolute top-0 left-0 right-0 z-[1000]"
+                className="absolute top-3 inset-x-3 z-[500]"
             >
-                <div className="bg-black/95 backdrop-blur-md border-b-2 border-zinc-800 p-3 md:p-4 shadow-[0_10px_30px_rgba(0,0,0,0.8)]">
-                    <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-2 md:gap-4 max-w-7xl mx-auto">
-
-                        <div className="flex items-center gap-3 w-full md:w-auto overflow-hidden">
-                            <Link href="/ghosts" className="text-zinc-500 hover:text-toxic-cyan transition-colors border-2 border-transparent hover:border-toxic-cyan p-1 hard-border shrink-0">
-                                <ArrowLeft size={20} />
+                <div className="hud edge-accent p-3.5 max-w-4xl mx-auto">
+                    <div className="flex items-center justify-between gap-3">
+                        <div className="flex items-center gap-3 min-w-0">
+                            <Link
+                                href="/ghosts"
+                                className="shrink-0 grid place-items-center w-9 h-9 rounded-lg border border-line text-zinc-500 hover:text-white hover:border-white/30 transition-colors"
+                            >
+                                <ArrowLeft size={17} />
                             </Link>
-                            <div className="truncate">
-                                <h1 className="text-lg md:text-xl font-bold text-toxic-yellow flex items-center gap-2 uppercase tracking-widest text-shadow-[0_0_10px_rgba(255,255,0,0.4)] glitch-hover">
-                                    <Trophy size={16} />
-                                    REPLAY
+                            <div className="min-w-0">
+                                <h1 className="font-display font-bold uppercase tracking-widest text-gold flex items-center gap-2">
+                                    <Trophy size={14} /> Replay
                                 </h1>
-                                <div className="text-zinc-500 text-[10px] md:text-xs uppercase tracking-widest truncate">
-                                    {ghost.driverName} • {ghost.date}
+                                <div className="label truncate">
+                                    {ghost.driverName} · {formatDate(ghost.date)}
                                 </div>
                             </div>
                         </div>
 
-                        <div className="flex items-center justify-between w-full md:w-auto gap-4 text-[10px] md:text-xs font-bold tracking-widest uppercase border-t-2 md:border-t-0 border-zinc-800 pt-2 md:pt-0">
-                            <div className="flex items-center gap-2 text-toxic-cyan">
-                                <CarIcon size={14} />
-                                <span className="truncate max-w-[100px] md:max-w-none">{ghost.carName}</span>
-                            </div>
-                            <div className="flex items-center gap-2 text-toxic-magenta">
-                                <MapPin size={14} />
-                                <span className="truncate max-w-[100px] md:max-w-none">{ghost.tougeName}</span>
-                            </div>
-                            <div className="text-lg md:text-2xl">{WEATHER_INFO[ghost.weather].icon}</div>
+                        <div className="flex items-center gap-4 text-[11px] font-bold uppercase tracking-widest shrink-0">
+                            <span className="hidden md:flex items-center gap-1.5 text-ice">
+                                <CarIcon size={12} />
+                                <span className="truncate max-w-[9rem]">{ghost.carName}</span>
+                            </span>
+                            <span className="hidden md:flex items-center gap-1.5 text-haze">
+                                <MapPin size={12} />
+                                <span className="truncate max-w-[9rem]">{ghost.tougeName}</span>
+                            </span>
+                            <span className="text-lg">{WEATHER_INFO[ghost.weather].icon}</span>
                         </div>
                     </div>
                 </div>
             </motion.div>
 
-            {/* HUD - Data Overlays (Mobile absolute) */}
-            <div className="absolute top-28 md:top-32 left-4 right-4 flex justify-between pointer-events-none z-[1000]">
-                {/* Timer Display */}
-                <div className="bg-black/90 backdrop-blur-md border-2 border-toxic-yellow hard-border px-4 py-2 text-center shadow-[0_0_15px_rgba(255,255,0,0.3)] pointer-events-auto">
-                    <div className="text-2xl md:text-4xl font-bold text-toxic-yellow text-shadow-[0_0_10px_rgba(255,255,0,0.4)]">
+            {/* ===== LIVE DATA ===== */}
+            <div className="absolute top-[5.5rem] inset-x-3 z-[500] flex justify-between pointer-events-none">
+                <motion.div
+                    initial={{ x: -20, opacity: 0 }}
+                    animate={{ x: 0, opacity: 1 }}
+                    transition={{ delay: 0.15 }}
+                    className="hud px-4 py-2.5 text-center"
+                >
+                    <div className="mono-num text-2xl md:text-4xl font-bold text-gold [text-shadow:0_0_20px_rgba(255,194,51,0.35)]">
                         {formatTime(currentPoint.timestamp)}
                     </div>
-                    <div className="text-zinc-500 text-[10px] md:text-xs mt-1 uppercase tracking-widest">
-                        / {formatTime(ghost.totalTime)}
-                    </div>
-                </div>
+                    <div className="label">/ {formatTime(ghost.totalTime)}</div>
+                </motion.div>
 
-                {/* Speed Display */}
-                <div className="bg-black/90 backdrop-blur-md border-2 border-zinc-800 hard-border p-2 md:p-4 text-center w-24 md:w-32 shadow-[0_0_15px_rgba(0,0,0,0.8)] pointer-events-auto">
-                    <Gauge size={16} className="mx-auto text-toxic-green mb-1" />
-                    <div className="text-xl md:text-3xl font-bold text-toxic-green text-shadow-[0_0_10px_rgba(0,255,65,0.4)]">
+                <motion.div
+                    initial={{ x: 20, opacity: 0 }}
+                    animate={{ x: 0, opacity: 1 }}
+                    transition={{ delay: 0.15 }}
+                    className="hud px-4 py-2.5 text-center w-24 md:w-28"
+                >
+                    <Gauge size={14} className="mx-auto text-mint mb-0.5" />
+                    <div className="mono-num text-xl md:text-3xl font-bold text-mint">
                         {(currentPoint.speed || 0).toFixed(0)}
                     </div>
-                    <div className="text-zinc-500 text-[10px] md:text-xs uppercase tracking-widest">KM/H</div>
-                </div>
+                    <div className="label">km/h</div>
+                </motion.div>
             </div>
 
-            {/* HUD - Stats Panel */}
-            <div className="absolute top-52 md:top-64 left-4 z-[1000] pointer-events-none hidden md:block">
-                <div className="bg-black/90 backdrop-blur-md border-2 border-zinc-800 hard-border p-4 space-y-3 w-40 shadow-[0_0_20px_rgba(0,0,0,0.8)] pointer-events-auto">
-                    <div className="text-center font-bold uppercase tracking-widest">
-                        <div className="text-xl text-toxic-yellow">{ghost.maxSpeed.toFixed(0)}</div>
-                        <div className="text-zinc-600 text-[10px]">VMAX (KM/H)</div>
-                    </div>
-                    <div className="text-center border-t-2 border-zinc-800 pt-3 font-bold uppercase tracking-widest">
-                        <div className="text-xl text-toxic-cyan">{ghost.avgSpeed.toFixed(0)}</div>
-                        <div className="text-zinc-600 text-[10px]">MOY (KM/H)</div>
-                    </div>
-                    <div className="text-center border-t-2 border-zinc-800 pt-3 font-bold uppercase tracking-widest">
-                        <div className="text-xl text-toxic-magenta">{ghost.totalDistance.toFixed(2)}</div>
-                        <div className="text-zinc-600 text-[10px]">DISTANCE (KM)</div>
-                    </div>
-                </div>
-            </div>
-
-            {/* HUD - Bottom Controls */}
+            {/* ===== SIDE STATS (desktop) ===== */}
             <motion.div
-                initial={{ y: 50, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                className="absolute bottom-4 left-4 right-4 z-[1000]"
+                initial={{ x: -20, opacity: 0 }}
+                animate={{ x: 0, opacity: 1 }}
+                transition={{ delay: 0.25 }}
+                className="absolute top-56 left-3 z-[500] hidden md:block"
             >
-                <div className="bg-black/95 backdrop-blur-xl border-2 border-zinc-800 hard-border p-4 shadow-[0_10px_30px_rgba(0,0,0,0.8)] max-w-2xl mx-auto">
+                <div className="hud p-4 space-y-3 w-40">
+                    <div className="text-center">
+                        <div className="mono-num text-xl font-bold text-gold">{ghost.maxSpeed.toFixed(0)}</div>
+                        <div className="label">Vmax (km/h)</div>
+                    </div>
+                    <div className="text-center border-t border-line pt-3">
+                        <div className="mono-num text-xl font-bold text-ice">{ghost.avgSpeed.toFixed(0)}</div>
+                        <div className="label">Moy (km/h)</div>
+                    </div>
+                    <div className="text-center border-t border-line pt-3">
+                        <div className="mono-num text-xl font-bold text-haze">{ghost.totalDistance.toFixed(2)}</div>
+                        <div className="label">Distance (km)</div>
+                    </div>
+                </div>
+            </motion.div>
 
-                    {/* Progress bar */}
-                    <div className="w-full mb-4 md:mb-6">
-                        <div className="h-4 bg-zinc-900 hard-border border border-zinc-800 overflow-hidden relative">
+            {/* ===== BOTTOM CONTROLS ===== */}
+            <motion.div
+                initial={{ y: 30, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ delay: 0.2 }}
+                className="absolute bottom-4 inset-x-3 z-[500]"
+            >
+                <div className="hud p-4 max-w-2xl mx-auto">
+                    {/* Progress bar (seekable) */}
+                    <div
+                        className="w-full mb-4 cursor-pointer group"
+                        onClick={(e) => {
+                            const rect = e.currentTarget.getBoundingClientRect();
+                            const ratio = Math.min(Math.max((e.clientX - rect.left) / rect.width, 0), 1);
+                            setCurrentIndex(Math.round(ratio * (ghost.points.length - 1)));
+                        }}
+                    >
+                        <div className="h-2.5 rounded-full bg-white/8 overflow-hidden group-hover:h-3.5 transition-all">
                             <div
-                                className="h-full bg-toxic-yellow transition-all duration-100 shadow-[0_0_10px_rgba(255,255,0,0.8)] relative"
+                                className="h-full rounded-full bg-gradient-to-r from-accent to-gold shadow-[0_0_12px_rgba(255,194,51,0.6)] transition-[width] duration-100"
                                 style={{ width: `${progress}%` }}
-                            >
-                            </div>
+                            />
                         </div>
                     </div>
 
-                    {/* Controls Row */}
-                    <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-
-                        <div className="flex items-center gap-4 w-full md:w-auto">
+                    <div className="flex items-center justify-between gap-4">
+                        <div className="flex items-center gap-2.5">
                             <button
                                 onClick={restart}
-                                className="flex-1 md:flex-none p-3 md:p-4 bg-black border-2 border-zinc-800 text-zinc-500 hover:text-white hover:border-white hard-border transition-colors flex justify-center items-center"
+                                className="grid place-items-center w-12 h-12 rounded-xl border border-line text-zinc-500 hover:text-white hover:border-white/30 transition-colors active:scale-95"
+                                aria-label="Recommencer"
                             >
-                                <RotateCcw size={20} />
+                                <RotateCcw size={19} />
                             </button>
-
                             <button
                                 onClick={togglePlay}
-                                className="flex-[2] md:flex-none p-3 md:p-4 bg-toxic-yellow border-2 border-toxic-yellow text-black hover:bg-white hover:text-black hover:border-white hard-border transition-colors shadow-[0_0_15px_rgba(255,255,0,0.4)] glitch-hover flex justify-center items-center gap-2 font-bold uppercase tracking-widest"
+                                className="grid place-items-center w-14 h-12 rounded-xl bg-accent text-black hover:bg-white transition-colors active:scale-95 shadow-[0_8px_28px_-8px_rgba(255,59,87,0.6)]"
+                                aria-label={isPlaying ? "Pause" : "Lecture"}
                             >
-                                {isPlaying ? (
-                                    <><Pause size={24} /> <span className="hidden md:inline">PAUSE</span></>
-                                ) : (
-                                    <><Play size={24} /> <span className="hidden md:inline">PLAY</span></>
-                                )}
+                                {isPlaying ? <Pause size={22} fill="currentColor" /> : <Play size={22} fill="currentColor" />}
                             </button>
                         </div>
 
                         {/* Speed selector */}
-                        <div className="flex w-full md:w-auto border-2 border-zinc-800 hard-border">
-                            {[0.5, 1, 2, 4].map((speed, i) => (
+                        <div className="flex rounded-xl border border-line overflow-hidden">
+                            {[0.5, 1, 2, 4].map((speed) => (
                                 <button
                                     key={speed}
                                     onClick={() => setPlaybackSpeed(speed)}
-                                    className={`flex-1 md:w-16 py-2 md:py-3 text-[10px] md:text-xs uppercase tracking-widest font-bold transition-colors ${i < 3 ? 'border-r-2 border-zinc-800' : ''} ${playbackSpeed === speed
-                                        ? "bg-toxic-cyan text-black shadow-[0_0_10px_rgba(0,255,255,0.4)]"
-                                        : "bg-black text-zinc-500 hover:text-white hover:bg-zinc-900"
+                                    className={`w-12 md:w-14 py-3 text-xs font-display font-bold transition-colors ${playbackSpeed === speed
+                                        ? "bg-ice text-black"
+                                        : "bg-transparent text-zinc-500 hover:text-white hover:bg-white/5"
                                         }`}
                                 >
-                                    {speed}X
+                                    {speed}×
                                 </button>
                             ))}
                         </div>
                     </div>
-
                 </div>
             </motion.div>
         </div>

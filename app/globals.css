@@ -1,64 +1,355 @@
 @import "tailwindcss";
 
-:root {
-  --background: 0 0% 3.9%;
-  /* Noir profond */
-  --foreground: 0 0% 98%;
+/* ============================================================
+   PROJECT D — NIGHT DRIVE DESIGN SYSTEM
+   ============================================================ */
+
+@theme {
+    /* Palette */
+    --color-bg: #07070c;
+    --color-surface: #0d0d15;
+    --color-raised: #14141f;
+    --color-line: rgba(255, 255, 255, 0.08);
+
+    --color-accent: #ff3b57;
+    /* apex red */
+    --color-ice: #38e1ff;
+    /* telemetry cyan */
+    --color-gold: #ffc233;
+    /* record gold */
+    --color-mint: #3ddc84;
+    /* gps green */
+    --color-haze: #a78bfa;
+    /* night violet */
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-pixel: var(--font-pixel);
+    --font-display: var(--font-display), "Chakra Petch", sans-serif;
+    --font-body: var(--font-body), "Rajdhani", sans-serif;
+}
 
-  /* Night Runners Toxic Palette */
-  --color-toxic-green: #00ff41;
-  --color-toxic-cyan: #00ffff;
-  --color-toxic-magenta: #ff00ff;
-  --color-toxic-yellow: #facc15;
+:root {
+    --nav-top: 3.5rem;
+    --nav-bottom: calc(4.25rem + env(safe-area-inset-bottom, 0px));
+}
+
+@media (min-width: 768px) {
+    :root {
+        --nav-top: 4rem;
+        --nav-bottom: 0px;
+    }
+}
+
+html,
+body {
+    height: 100%;
 }
 
 body {
-  background-color: #030303;
-  color: #ededed;
-  font-family: var(--font-pixel), 'Courier Prime', monospace;
-  overflow-x: hidden;
-
-  /* Hard CRT Scanlines & Screen Glow */
-  background-image:
-    linear-gradient(rgba(0, 0, 0, 0) 50%, rgba(0, 0, 0, 0.3) 50%),
-    linear-gradient(90deg, rgba(255, 0, 0, 0.03), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.03));
-  background-size: 100% 4px, 3px 100%;
+    background-color: var(--color-bg);
+    color: #e9e9f2;
+    font-family: var(--font-body);
+    font-size: 1.0625rem;
+    overflow-x: hidden;
+    -webkit-tap-highlight-color: transparent;
 }
 
+/* Fixed atmospheric background: horizon glow + fine grid + vignette */
+.bg-fx {
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background:
+        radial-gradient(120% 60% at 50% -10%, rgba(255, 59, 87, 0.13), transparent 60%),
+        radial-gradient(80% 50% at 85% 110%, rgba(56, 225, 255, 0.07), transparent 60%),
+        var(--color-bg);
+}
 
-/* Scrollbar invisible mais fonctionnelle */
+.bg-fx::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-image:
+        linear-gradient(rgba(255, 255, 255, 0.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.025) 1px, transparent 1px);
+    background-size: 44px 44px;
+    mask-image: radial-gradient(80% 60% at 50% 0%, black, transparent 90%);
+}
+
+.bg-fx::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(120% 120% at 50% 50%, transparent 55%, rgba(0, 0, 0, 0.5));
+}
+
+/* Main content area (below fixed navs) */
+.app-main {
+    padding-top: var(--nav-top);
+    padding-bottom: var(--nav-bottom);
+    min-height: 100dvh;
+}
+
+/* Full-bleed map screens */
+.map-screen {
+    height: calc(100dvh - var(--nav-top) - var(--nav-bottom));
+    position: relative;
+    overflow: hidden;
+}
+
+/* ============================================================
+   Typography helpers
+   ============================================================ */
+
+.font-display {
+    font-family: var(--font-display);
+}
+
+.title-xl {
+    font-family: var(--font-display);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    line-height: 1.05;
+}
+
+.kicker {
+    font-family: var(--font-display);
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.35em;
+}
+
+.label {
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.22em;
+    color: #6b6b7d;
+}
+
+.mono-num {
+    font-family: var(--font-display);
+    font-variant-numeric: tabular-nums;
+}
+
+/* ============================================================
+   Surfaces
+   ============================================================ */
+
+.glass {
+    background: linear-gradient(160deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0.015));
+    border: 1px solid var(--color-line);
+    border-radius: 1rem;
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+}
+
+.glass-hover {
+    transition: border-color 0.25s ease, transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.glass-hover:hover {
+    border-color: rgba(255, 59, 87, 0.45);
+    transform: translateY(-2px);
+    box-shadow: 0 12px 40px -12px rgba(255, 59, 87, 0.25);
+}
+
+.hud {
+    background: rgba(9, 9, 15, 0.82);
+    border: 1px solid var(--color-line);
+    border-radius: 1rem;
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    box-shadow: 0 16px 50px -20px rgba(0, 0, 0, 0.9);
+}
+
+/* Accent top edge for header cards */
+.edge-accent {
+    position: relative;
+    overflow: hidden;
+}
+
+.edge-accent::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--color-accent), transparent);
+    opacity: 0.8;
+}
+
+/* ============================================================
+   Motion / decorative
+   ============================================================ */
+
+@keyframes pulse-dot {
+
+    0%,
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+
+    50% {
+        opacity: 0.35;
+        transform: scale(0.8);
+    }
+}
+
+.pulse-dot {
+    animation: pulse-dot 1.4s ease-in-out infinite;
+}
+
+@keyframes shimmer {
+    0% {
+        background-position: -200% 0;
+    }
+
+    100% {
+        background-position: 200% 0;
+    }
+}
+
+.text-shimmer {
+    background: linear-gradient(100deg, #e9e9f2 40%, var(--color-accent) 50%, #e9e9f2 60%);
+    background-size: 200% 100%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    animation: shimmer 4.5s linear infinite;
+}
+
+@keyframes speedline {
+    0% {
+        transform: translateX(-100%);
+    }
+
+    100% {
+        transform: translateX(400%);
+    }
+}
+
+.speedline {
+    position: relative;
+    overflow: hidden;
+}
+
+.speedline::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 30%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.06), transparent);
+    animation: speedline 3.2s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+
+/* ============================================================
+   Scrollbar
+   ============================================================ */
+
 ::-webkit-scrollbar {
-  width: 8px;
+    width: 8px;
+    height: 8px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #0a0a0a;
+    background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #333;
-  border-radius: 4px;
+    background: rgba(255, 255, 255, 0.12);
+    border-radius: 99px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--color-toxic-magenta);
-  /* Magenta toxic au survol */
+    background: rgba(255, 59, 87, 0.55);
 }
 
-/* Base Night Runners Utilities */
-.glitch-hover:hover,
-.group:hover .glitch-hover {
-  text-shadow: 1px 1px 0 rgba(255, 0, 255, 0.6), -1px -1px 0 rgba(0, 255, 255, 0.6);
-  transform: skewX(-2deg);
+/* ============================================================
+   Leaflet overrides (dark HUD style)
+   ============================================================ */
+
+.leaflet-container {
+    background: #0a0a12 !important;
+    font-family: var(--font-body) !important;
 }
 
-.hard-border {
-  border-width: 2px;
-  border-radius: 0;
+.leaflet-control-attribution {
+    background: rgba(9, 9, 15, 0.7) !important;
+    color: #55556a !important;
+    font-size: 9px !important;
+    backdrop-filter: blur(6px);
+}
+
+.leaflet-control-attribution a {
+    color: #77778c !important;
+}
+
+.pd-popup .leaflet-popup-content-wrapper {
+    background: transparent;
+    box-shadow: none;
+    padding: 0;
+    border-radius: 0;
+}
+
+.pd-popup .leaflet-popup-content {
+    margin: 0;
+}
+
+.pd-popup .leaflet-popup-tip-container {
+    display: none;
+}
+
+/* Leaflet z-index below our HUD/nav */
+.leaflet-pane,
+.leaflet-top,
+.leaflet-bottom {
+    z-index: 10 !important;
+}
+
+/* ============================================================
+   Forms
+   ============================================================ */
+
+.field {
+    width: 100%;
+    background: rgba(0, 0, 0, 0.45);
+    border: 1px solid var(--color-line);
+    border-radius: 0.75rem;
+    padding: 0.7rem 1rem;
+    color: #fff;
+    font-weight: 600;
+    outline: none;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.field::placeholder {
+    color: #55556a;
+    font-weight: 500;
+}
+
+.field:focus {
+    border-color: rgba(255, 59, 87, 0.6);
+    box-shadow: 0 0 0 3px rgba(255, 59, 87, 0.12);
+}
+
+select.field option {
+    background: #14141f;
 }

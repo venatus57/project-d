@@ -1,9 +1,9 @@
-﻿"use client";
+"use client";
 
-import { useEffect, useMemo } from "react";
+import { useEffect } from "react";
 import { MapContainer, TileLayer, Polyline, CircleMarker, useMap } from "react-leaflet";
+import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-import type { LatLngBounds } from "leaflet";
 
 type LatLng = [number, number];
 
@@ -12,15 +12,12 @@ interface RouteMapViewProps {
     routeGeometry?: LatLng[];
 }
 
-// Fit map to route bounds
 function FitBounds({ points }: { points: LatLng[] }) {
     const map = useMap();
 
     useEffect(() => {
         if (points.length > 0) {
-            const L = require("leaflet");
-            const bounds: LatLngBounds = L.latLngBounds(points);
-            map.fitBounds(bounds, { padding: [50, 50] });
+            map.fitBounds(L.latLngBounds(points), { padding: [60, 60] });
         }
     }, [map, points]);
 
@@ -32,77 +29,43 @@ export default function RouteMapView({ points, routeGeometry }: RouteMapViewProp
     const linePoints = routeGeometry && routeGeometry.length > 0 ? routeGeometry : points;
 
     return (
-        <MapContainer
-            center={defaultCenter}
-            zoom={12}
-            className="w-full h-full"
-            style={{ background: "#0a0a0a" }}
-            zoomControl={false}
-        >
+        <MapContainer center={defaultCenter} zoom={12} className="w-full h-full" zoomControl={false}>
             <TileLayer
-                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>'
                 url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
             />
 
             <FitBounds points={linePoints} />
 
-            {/* Glow effect */}
+            {/* Glow + main line */}
             {linePoints.length >= 2 && (
-                <Polyline
-                    positions={linePoints}
-                    pathOptions={{
-                        color: "#facc15",
-                        weight: 16,
-                        opacity: 0.2,
-                        lineCap: "round",
-                        lineJoin: "round",
-                    }}
-                />
+                <>
+                    <Polyline
+                        positions={linePoints}
+                        pathOptions={{ color: "#ff3b57", weight: 16, opacity: 0.15, lineCap: "round", lineJoin: "round" }}
+                    />
+                    <Polyline
+                        positions={linePoints}
+                        pathOptions={{ color: "#ff3b57", weight: 5, opacity: 0.95, lineCap: "round", lineJoin: "round" }}
+                    />
+                </>
             )}
 
-            {/* Main route line */}
-            {linePoints.length >= 2 && (
-                <Polyline
-                    positions={linePoints}
-                    pathOptions={{
-                        color: "#facc15",
-                        weight: 5,
-                        opacity: 0.95,
-                        lineCap: "round",
-                        lineJoin: "round",
-                    }}
-                />
+            {/* Start / end markers */}
+            {points.length > 0 && (
+                <>
+                    <CircleMarker
+                        center={points[0]}
+                        radius={11}
+                        pathOptions={{ color: "#3ddc84", fillColor: "#3ddc84", fillOpacity: 0.9, weight: 3 }}
+                    />
+                    <CircleMarker
+                        center={points[points.length - 1]}
+                        radius={11}
+                        pathOptions={{ color: "#ffc233", fillColor: "#ffc233", fillOpacity: 0.9, weight: 3 }}
+                    />
+                </>
             )}
-
-            {/* Waypoint markers */}
-            {points.map((point, index) => (
-                <CircleMarker
-                    key={`glow-${index}`}
-                    center={point}
-                    radius={index === 0 ? 20 : index === points.length - 1 ? 20 : 12}
-                    pathOptions={{
-                        color: index === 0 ? "#22c55e" : index === points.length - 1 ? "#ef4444" : "#facc15",
-                        fillColor: "transparent",
-                        fillOpacity: 0,
-                        weight: 3,
-                        opacity: 0.3,
-                    }}
-                />
-            ))}
-
-            {points.map((point, index) => (
-                <CircleMarker
-                    key={index}
-                    center={point}
-                    radius={index === 0 ? 12 : index === points.length - 1 ? 12 : 7}
-                    pathOptions={{
-                        color: index === 0 ? "#22c55e" : index === points.length - 1 ? "#ef4444" : "#facc15",
-                        fillColor: index === 0 ? "#22c55e" : index === points.length - 1 ? "#ef4444" : "#facc15",
-                        fillOpacity: 0.9,
-                        weight: 3,
-                    }}
-                />
-            ))}
         </MapContainer>
     );
 }

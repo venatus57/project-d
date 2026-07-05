@@ -2,133 +2,214 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { Car, Mountain, User, Route, Trophy } from "lucide-react";
+import { motion } from "framer-motion";
+import {
+  Car, Mountain, User, Route, Trophy, Play, Map as MapIcon, ChevronRight, Gauge,
+} from "lucide-react";
 import { getProfile, PlayerProfile } from "./lib/profile";
+import { loadGhosts, loadRoutes } from "./lib/storage";
+import { fadeUp, stagger } from "@/components/ui";
+
+type Section = {
+  href: string;
+  title: string;
+  desc: string;
+  icon: typeof Play;
+  tone: "accent" | "ice" | "gold" | "mint" | "haze";
+  big?: boolean;
+};
+
+const sections: Section[] = [
+  {
+    href: "/run",
+    title: "Run",
+    desc: "Lance un run GPS chronométré et enregistre ton ghost.",
+    icon: Play,
+    tone: "accent",
+    big: true,
+  },
+  {
+    href: "/touge",
+    title: "Touge",
+    desc: "Cols légendaires et tracés personnels.",
+    icon: Mountain,
+    tone: "ice",
+  },
+  {
+    href: "/ghosts",
+    title: "Ghosts",
+    desc: "Replays, chronos et classements.",
+    icon: Trophy,
+    tone: "gold",
+  },
+  {
+    href: "/garage",
+    title: "Garage",
+    desc: "Loadout pilote et specs machine.",
+    icon: Car,
+    tone: "mint",
+  },
+  {
+    href: "/conquest",
+    title: "Conquest",
+    desc: "Construis tes propres circuits.",
+    icon: Route,
+    tone: "haze",
+  },
+  {
+    href: "/map",
+    title: "Map",
+    desc: "Toutes les routes sur la carte.",
+    icon: MapIcon,
+    tone: "ice",
+  },
+  {
+    href: "/profile",
+    title: "Profil",
+    desc: "Stats, battles et sauvegarde.",
+    icon: User,
+    tone: "accent",
+  },
+];
+
+const toneStyles: Record<string, { icon: string; hoverBorder: string; glow: string }> = {
+  accent: { icon: "text-accent bg-accent/10 border-accent/30", hoverBorder: "hover:border-accent/50", glow: "rgba(255,59,87,0.25)" },
+  ice: { icon: "text-ice bg-ice/10 border-ice/30", hoverBorder: "hover:border-ice/50", glow: "rgba(56,225,255,0.2)" },
+  gold: { icon: "text-gold bg-gold/10 border-gold/30", hoverBorder: "hover:border-gold/50", glow: "rgba(255,194,51,0.2)" },
+  mint: { icon: "text-mint bg-mint/10 border-mint/30", hoverBorder: "hover:border-mint/50", glow: "rgba(61,220,132,0.2)" },
+  haze: { icon: "text-haze bg-haze/10 border-haze/30", hoverBorder: "hover:border-haze/50", glow: "rgba(167,139,250,0.2)" },
+};
 
 export default function Home() {
   const [profile, setProfile] = useState<PlayerProfile | null>(null);
+  const [ghostCount, setGhostCount] = useState(0);
+  const [routeCount, setRouteCount] = useState(0);
 
   useEffect(() => {
     setProfile(getProfile());
+    setGhostCount(loadGhosts().length);
+    setRouteCount(loadRoutes().length);
   }, []);
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-zinc-100 font-mono flex flex-col items-center justify-center p-8 pt-20">
+    <div className="mx-auto w-full max-w-6xl px-4 md:px-8 py-8 md:py-14">
+      {/* ===== HERO ===== */}
+      <motion.header
+        variants={stagger}
+        initial="hidden"
+        animate="show"
+        className="text-center mb-10 md:mb-14"
+      >
+        <motion.div variants={fadeUp} className="kicker text-accent mb-4 flex items-center justify-center gap-3">
+          <span className="inline-block w-8 h-px bg-accent" />
+          Night driving telemetry
+          <span className="inline-block w-8 h-px bg-accent" />
+        </motion.div>
+        <motion.h1
+          variants={fadeUp}
+          className="title-xl text-5xl md:text-8xl italic text-shimmer"
+        >
+          Project&nbsp;D
+        </motion.h1>
+        <motion.p variants={fadeUp} className="text-zinc-500 font-medium mt-4 text-lg">
+          Garage · Touge · Ghost runs
+        </motion.p>
+      </motion.header>
 
-      {/* LOGO / TITLE */}
-      <header className="text-center mb-10 mt-8">
-        <h1 className="text-6xl md:text-8xl font-bold italic tracking-tighter text-toxic-magenta mb-2 glitch-hover" style={{ textShadow: "4px 0 var(--color-toxic-cyan), -4px 0 var(--color-toxic-yellow)" }}>
-          PROJECT D
-        </h1>
-        <p className="text-zinc-500 text-lg tracking-widest uppercase font-bold">
-          BATTLE STAGE V3 // NIGHT RUNNERS
-        </p>
-        <div className="w-full max-w-md h-1 bg-toxic-green mx-auto mt-6 shadow-[0_0_15px_rgba(0,255,65,0.5)] leading-none" />
-      </header>
-
-      {/* GLOBAL HUD (PROGRESSION) */}
-      <div className="w-full max-w-3xl mb-12 bg-black border-2 border-toxic-cyan p-6 shadow-[0_0_20px_rgba(0,255,255,0.1)] relative overflow-hidden group">
-        <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-          <Trophy size={100} />
+      {/* ===== DRIVER HUD ===== */}
+      <motion.section
+        variants={fadeUp}
+        initial="hidden"
+        animate="show"
+        className="glass edge-accent speedline p-5 md:p-6 mb-8 md:mb-10"
+      >
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
+          <div className="col-span-2 md:col-span-1 flex items-center gap-4">
+            <div className="grid place-items-center w-12 h-12 rounded-xl bg-accent/10 border border-accent/30 text-2xl">
+              {profile?.avatar || "🏎️"}
+            </div>
+            <div>
+              <div className="label">Pilote</div>
+              <div className="font-display font-bold text-xl text-white uppercase tracking-wider truncate max-w-[10rem]">
+                {profile?.driverName || "Anonyme"}
+              </div>
+            </div>
+          </div>
+          <div className="text-center md:border-l border-line">
+            <div className="mono-num text-2xl md:text-3xl font-bold text-mint">
+              {profile ? profile.totalDistance.toFixed(1) : "0.0"}
+              <span className="text-sm text-zinc-500 ml-1">km</span>
+            </div>
+            <div className="label mt-1">Odomètre</div>
+          </div>
+          <div className="text-center md:border-l border-line">
+            <div className="mono-num text-2xl md:text-3xl font-bold text-gold">{ghostCount}</div>
+            <div className="label mt-1">Ghosts</div>
+          </div>
+          <div className="text-center md:border-l border-line">
+            <div className="mono-num text-2xl md:text-3xl font-bold text-ice">{routeCount}</div>
+            <div className="label mt-1">Tracés</div>
+          </div>
         </div>
+      </motion.section>
 
-        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
-          {/* Driver Info */}
-          <div className="flex-1 border-[1px] border-zinc-800 p-4 bg-zinc-950">
-            <div className="text-toxic-cyan text-xs mb-1 font-bold tracking-widest">DRIVING LICENSE / CURRENT USER</div>
-            <div className="text-4xl font-bold text-white uppercase glitch-hover">{profile?.driverName || "ANONYME"}</div>
-          </div>
+      {/* ===== NAVIGATION GRID ===== */}
+      <motion.div
+        variants={stagger}
+        initial="hidden"
+        animate="show"
+        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-5"
+      >
+        {sections.map((s) => {
+          const t = toneStyles[s.tone];
+          const Icon = s.icon;
+          return (
+            <motion.div
+              key={s.href}
+              variants={fadeUp}
+              whileHover={{ y: -4 }}
+              whileTap={{ scale: 0.98 }}
+              className={s.big ? "sm:col-span-2 lg:col-span-1" : ""}
+            >
+              <Link
+                href={s.href}
+                className={`group glass glass-hover ${t.hoverBorder} flex flex-col h-full p-6 relative overflow-hidden`}
+                style={{ ["--glow" as string]: t.glow }}
+              >
+                <div
+                  className="absolute -top-16 -right-16 w-40 h-40 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-500 blur-3xl"
+                  style={{ background: t.glow }}
+                />
+                <div className="flex items-center justify-between mb-5 relative">
+                  <span className={`grid place-items-center w-11 h-11 rounded-xl border ${t.icon}`}>
+                    <Icon size={20} />
+                  </span>
+                  <ChevronRight
+                    size={18}
+                    className="text-zinc-700 group-hover:text-white group-hover:translate-x-1 transition-all"
+                  />
+                </div>
+                <h2 className="font-display font-bold uppercase tracking-widest text-xl text-white mb-1 relative">
+                  {s.title}
+                </h2>
+                <p className="text-zinc-500 text-sm font-medium relative">{s.desc}</p>
+              </Link>
+            </motion.div>
+          );
+        })}
+      </motion.div>
 
-          {/* Odometer Stats */}
-          <div className="flex-1 border-[1px] border-zinc-800 p-4 bg-zinc-950 text-right">
-            <div className="text-zinc-500 text-xs font-bold tracking-widest">LIFETIME ODOMETER</div>
-            <div className="text-toxic-green font-bold text-4xl">{profile?.totalDistance.toFixed(1) || "0.0"} <span className="text-lg text-zinc-500">KM</span></div>
-          </div>
-        </div>
-      </div>
-
-      {/* NAVIGATION CARDS */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-3xl">
-
-        {/* PROFILE LINK */}
-        <Link
-          href="/profile"
-          className="group bg-black border-2 border-zinc-800 p-8 hover:border-toxic-magenta transition-all duration-300 relative overflow-hidden"
-        >
-          <div className="absolute inset-0 bg-toxic-magenta/5 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
-          <div className="relative z-10 flex items-center gap-4 mb-4">
-            <User size={32} className="text-zinc-600 group-hover:text-toxic-magenta transition-colors" />
-            <h2 className="text-3xl font-bold group-hover:text-white glitch-hover">PROFILE</h2>
-          </div>
-          <p className="relative z-10 text-zinc-500 text-sm">
-            Save management, settings & driver stats.
-          </p>
-          <div className="relative z-10 mt-6 text-sm font-bold text-zinc-700 group-hover:text-toxic-magenta transition-colors">
-            ACCESS CARD &gt;
-          </div>
-        </Link>
-
-        {/* GARAGE LINK */}
-        <Link
-          href="/garage"
-          className="group bg-black border-2 border-zinc-800 p-8 hover:border-toxic-cyan transition-all duration-300 relative overflow-hidden"
-        >
-          <div className="absolute inset-0 bg-toxic-cyan/5 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
-          <div className="relative z-10 flex items-center gap-4 mb-4">
-            <Car size={32} className="text-zinc-600 group-hover:text-toxic-cyan transition-colors" />
-            <h2 className="text-3xl font-bold group-hover:text-white glitch-hover">GARAGE</h2>
-          </div>
-          <p className="relative z-10 text-zinc-500 text-sm">
-            Configure your loadout and view machines.
-          </p>
-          <div className="relative z-10 mt-6 text-sm font-bold text-zinc-700 group-hover:text-toxic-cyan transition-colors">
-            ACCESS PARKING AREA &gt;
-          </div>
-        </Link>
-
-        {/* TOUGE LINK */}
-        <Link
-          href="/touge"
-          className="group bg-black border-2 border-zinc-800 p-8 hover:border-toxic-green transition-all duration-300 relative overflow-hidden"
-        >
-          <div className="absolute inset-0 bg-toxic-green/5 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
-          <div className="relative z-10 flex items-center gap-4 mb-4">
-            <Mountain size={32} className="text-zinc-600 group-hover:text-toxic-green transition-colors" />
-            <h2 className="text-3xl font-bold group-hover:text-white glitch-hover">TOUGE</h2>
-          </div>
-          <p className="relative z-10 text-zinc-500 text-sm">
-            Select legendary mountain pass circuits.
-          </p>
-          <div className="relative z-10 mt-6 text-sm font-bold text-zinc-700 group-hover:text-toxic-green transition-colors">
-            ACCESS COURSE &gt;
-          </div>
-        </Link>
-
-        {/* CONQUEST LINK */}
-        <Link
-          href="/conquest"
-          className="group bg-black border-2 border-zinc-800 p-8 hover:border-toxic-yellow transition-all duration-300 relative overflow-hidden"
-        >
-          <div className="absolute inset-0 bg-toxic-yellow/5 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
-          <div className="relative z-10 flex items-center gap-4 mb-4">
-            <Route size={32} className="text-zinc-600 group-hover:text-toxic-yellow transition-colors" />
-            <h2 className="text-3xl font-bold group-hover:text-white glitch-hover">CONQUEST</h2>
-          </div>
-          <p className="relative z-10 text-zinc-500 text-sm">
-            Build custom circuits and rival territory.
-          </p>
-          <div className="relative z-10 mt-6 text-sm font-bold text-zinc-700 group-hover:text-toxic-yellow transition-colors">
-            MAP EDITOR &gt;
-          </div>
-        </Link>
-
-      </div>
-
-      {/* FOOTER */}
-      <footer className="mt-16 mb-8 text-zinc-600 text-sm font-bold tracking-widest flex items-center gap-4">
-        <span className="animate-pulse w-2 h-2 bg-toxic-green shadow-[0_0_10px_#00ff41]" />
-        SYSTEM v3.0 // CONNECTED
-      </footer>
+      {/* ===== FOOTER ===== */}
+      <motion.footer
+        variants={fadeUp}
+        initial="hidden"
+        animate="show"
+        className="mt-12 md:mt-16 flex items-center justify-center gap-3 text-zinc-600"
+      >
+        <span className="w-2 h-2 rounded-full bg-mint pulse-dot shadow-[0_0_10px_rgba(61,220,132,0.8)]" />
+        <span className="label">System v4.0 — Online</span>
+        <Gauge size={13} />
+      </motion.footer>
     </div>
   );
 }

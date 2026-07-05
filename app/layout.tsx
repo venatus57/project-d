@@ -1,18 +1,24 @@
-import type { Metadata } from "next";
-import { VT323 } from "next/font/google";
+import type { Metadata, Viewport } from "next";
+import { Chakra_Petch, Rajdhani } from "next/font/google";
 import { Navbar } from "@/components/Navbar";
 import PageTransition from "@/components/PageTransition";
 import "./globals.css";
 
-const vt323 = VT323({
-  weight: "400",
-  variable: "--font-pixel",
+const display = Chakra_Petch({
+  weight: ["500", "600", "700"],
+  variable: "--font-display",
+  subsets: ["latin"],
+});
+
+const body = Rajdhani({
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-body",
   subsets: ["latin"],
 });
 
 export const metadata: Metadata = {
   title: "PROJECT D",
-  description: "Driver Configuration System - Garage & Touge",
+  description: "Night driving telemetry — garage, touge & ghost runs",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
@@ -24,8 +30,11 @@ export const metadata: Metadata = {
   },
 };
 
-export const viewport = {
-  themeColor: "#000000",
+export const viewport: Viewport = {
+  themeColor: "#07070c",
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
 };
 
 export default function RootLayout({
@@ -34,16 +43,14 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="dark" suppressHydrationWarning>
-      <body className={`${vt323.variable} font-pixel antialiased bg-black text-[#f0f0f0]`} suppressHydrationWarning>
+    <html lang="fr" className="dark" suppressHydrationWarning>
+      <body className={`${display.variable} ${body.variable} font-body antialiased`} suppressHydrationWarning>
+        <div className="bg-fx" aria-hidden />
         <Navbar />
-        <div className="pt-14 h-full">
-          <PageTransition>
-            {children}
-          </PageTransition>
-        </div>
+        <main className="app-main">
+          <PageTransition>{children}</PageTransition>
+        </main>
       </body>
     </html>
   );
 }
-

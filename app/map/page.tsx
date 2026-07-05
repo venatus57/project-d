@@ -3,24 +3,20 @@
 import { Suspense } from "react";
 import dynamic from "next/dynamic";
 
+const loading = (
+    <div className="map-screen grid place-items-center">
+        <div className="kicker text-ice animate-pulse">Chargement de la carte…</div>
+    </div>
+);
+
 const MapExplorerClient = dynamic(() => import("./MapExplorerClient"), {
     ssr: false,
-    loading: () => (
-        <div className="w-full h-screen bg-black flex items-center justify-center font-pixel">
-            <div className="text-zinc-500 font-bold animate-pulse tracking-widest uppercase">
-                LOADING OVERRIDE MAP...
-            </div>
-        </div>
-    )
+    loading: () => loading,
 });
 
 export default function MapPage() {
     return (
-        <Suspense fallback={
-            <div className="w-full h-screen bg-black flex items-center justify-center font-pixel">
-                <div className="text-zinc-500 font-bold tracking-widest uppercase">INITIALIZING SYSTEM...</div>
-            </div>
-        }>
+        <Suspense fallback={loading}>
             <MapExplorerClient />
         </Suspense>
     );

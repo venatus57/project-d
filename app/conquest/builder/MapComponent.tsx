@@ -15,31 +15,27 @@ interface MapComponentProps {
     userLocation?: LatLng | null;
 }
 
-// Component to handle map clicks
 function MapClickHandler({ onMapClick }: { onMapClick?: (latlng: LatLng) => void }) {
     useMapEvents({
         click: (e) => {
-            if (onMapClick) {
-                onMapClick([e.latlng.lat, e.latlng.lng]);
-            }
+            onMapClick?.([e.latlng.lat, e.latlng.lng]);
         },
     });
     return null;
 }
 
-// Component to fly to new location when center changes
 function FlyToLocation({ center, zoom }: { center: LatLng; zoom: number }) {
     const map = useMap();
 
     useEffect(() => {
-        map.flyTo(center, zoom, {
-            duration: 1.5,
-            easeLinearity: 0.25
-        });
+        map.flyTo(center, zoom, { duration: 1.4, easeLinearity: 0.25 });
     }, [map, center, zoom]);
 
     return null;
 }
+
+const wpColor = (index: number, count: number) =>
+    index === 0 ? "#3ddc84" : index === count - 1 ? "#ffc233" : "#38e1ff";
 
 export default function MapComponent({
     waypoints,
@@ -47,120 +43,69 @@ export default function MapComponent({
     onMapClick,
     center,
     zoom = 8,
-    userLocation = null
+    userLocation = null,
 }: MapComponentProps) {
     const defaultCenter: LatLng = center || [43.9367, 7.1186];
-    const defaultZoom = zoom;
     const linePoints = routeGeometry && routeGeometry.length >= 2 ? routeGeometry : waypoints;
 
     return (
         <MapContainer
             center={defaultCenter}
-            zoom={defaultZoom}
+            zoom={zoom}
             className="w-full h-full"
-            style={{ background: "#0a0a0a" }}
             zoomControl={false}
         >
-            {/* Dark Matter Tile Layer */}
             <TileLayer
-                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>'
                 url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
             />
 
-            {/* Fly to new location when region changes */}
-            <FlyToLocation center={defaultCenter} zoom={defaultZoom} />
-
-            {/* Click Handler */}
+            <FlyToLocation center={defaultCenter} zoom={zoom} />
             <MapClickHandler onMapClick={onMapClick} />
 
-            {/* Glow effect line */}
+            {/* Route with glow */}
             {linePoints.length >= 2 && (
-                <Polyline
-                    positions={linePoints}
-                    pathOptions={{
-                        color: "#facc15",
-                        weight: 14,
-                        opacity: 0.2,
-                        lineCap: "round",
-                        lineJoin: "round",
-                    }}
-                />
+                <>
+                    <Polyline
+                        positions={linePoints}
+                        pathOptions={{ color: "#ff3b57", weight: 14, opacity: 0.18, lineCap: "round", lineJoin: "round" }}
+                    />
+                    <Polyline
+                        positions={linePoints}
+                        pathOptions={{ color: "#ff3b57", weight: 4, opacity: 0.95, lineCap: "round", lineJoin: "round" }}
+                    />
+                </>
             )}
 
-            {/* Route Polyline */}
-            {linePoints.length >= 2 && (
-                <Polyline
-                    positions={linePoints}
-                    pathOptions={{
-                        color: "#facc15",
-                        weight: 4,
-                        opacity: 0.95,
-                        lineCap: "round",
-                        lineJoin: "round",
-                    }}
-                />
-            )}
+            {/* Waypoints */}
+            {waypoints.map((point, index) => {
+                const color = wpColor(index, waypoints.length);
+                const isEnd = index === 0 || index === waypoints.length - 1;
+                return (
+                    <CircleMarker
+                        key={index}
+                        center={point}
+                        radius={isEnd ? 11 : 6}
+                        pathOptions={{ color, fillColor: color, fillOpacity: 0.9, weight: 3 }}
+                    />
+                );
+            })}
 
-            {/* Outer glow for waypoints */}
-            {waypoints.map((point, index) => (
-                <CircleMarker
-                    key={`glow-${index}`}
-                    center={point}
-                    radius={index === 0 ? 20 : index === waypoints.length - 1 ? 20 : 14}
-                    pathOptions={{
-                        color: index === 0 ? "#22c55e" : index === waypoints.length - 1 ? "#ef4444" : "#facc15",
-                        fillColor: "transparent",
-                        fillOpacity: 0,
-                        weight: 3,
-                        opacity: 0.25,
-                    }}
-                />
-            ))}
-
-            {/* Waypoint Circles */}
-            {waypoints.map((point, index) => (
-                <CircleMarker
-                    key={index}
-                    center={point}
-                    radius={index === 0 ? 12 : index === waypoints.length - 1 ? 12 : 7}
-                    pathOptions={{
-                        color: index === 0 ? "#22c55e" : index === waypoints.length - 1 ? "#ef4444" : "#facc15",
-                        fillColor: index === 0 ? "#22c55e" : index === waypoints.length - 1 ? "#ef4444" : "#facc15",
-                        fillOpacity: 0.9,
-                        weight: 3,
-                    }}
-                />
-            ))}
-
-            {/* GPS User Location Marker */}
+            {/* GPS user location */}
             {userLocation && (
                 <>
-                    {/* Pulsing ring */}
                     <CircleMarker
                         center={userLocation}
-                        radius={20}
-                        pathOptions={{
-                            color: "#06b6d4", // toxic-cyan equivalent
-                            fillColor: "transparent",
-                            fillOpacity: 0,
-                            weight: 2,
-                            className: "animate-ping opacity-75"
-                        }}
+                        radius={18}
+                        pathOptions={{ fillColor: "#38e1ff", fillOpacity: 0.15, stroke: false }}
                     />
-                    {/* Core dot */}
                     <CircleMarker
                         center={userLocation}
                         radius={6}
-                        pathOptions={{
-                            color: "#ffffff",
-                            fillColor: "#ef4444", // red-500
-                            fillOpacity: 1,
-                            weight: 2,
-                        }}
+                        pathOptions={{ color: "#ffffff", fillColor: "#38e1ff", fillOpacity: 1, weight: 2 }}
                     />
                 </>
             )}
         </MapContainer>
     );
 }
-

@@ -4,27 +4,14 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import {
-    Pencil, Upload, Save, Undo2, RotateCcw, MapPin,
-    Ruler, FileDown, ChevronLeft, ChevronRight,
-    TrendingDown, TrendingUp, Gauge, Navigation, Flag, Route, Zap,
-    Disc, StopCircle, Navigation2
+    Pencil, Upload, ChevronLeft, ChevronRight, TrendingDown, TrendingUp,
+    Navigation, Route, Zap, Disc, Navigation2, FileDown, X,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-
-// Types
-type LatLng = [number, number];
-
-type RouteData = {
-    id: string;
-    name: string;
-    points: LatLng[];
-    routeGeometry: LatLng[]; // Points interpolés suivant la route
-    distance: number;
-    createdAt: string;
-    type: "DOWNHILL" | "UPHILL" | "MIXED";
-    difficulty: "EASY" | "MEDIUM" | "HARD" | "LEGENDARY";
-    region: string;
-};
+import { UserRoute, LatLng } from "../../lib/types";
+import { loadRoutes, saveRoutes } from "../../lib/storage";
+import { pathDistanceKm, distanceKm } from "../../lib/geo";
+import { DIFFICULTY_STYLE, Difficulty } from "@/components/ui";
 
 type RegionPreset = {
     name: string;
@@ -33,7 +20,7 @@ type RegionPreset = {
     category?: string;
 };
 
-// Cols et routes mythiques de France 🇫🇷
+// Cols et routes mythiques de France
 const REGION_PRESETS: RegionPreset[] = [
     // === ALPES ===
     { name: "Col du Galibier", center: [45.0642, 6.4078], zoom: 14, category: "Alpes" },
@@ -44,19 +31,15 @@ const REGION_PRESETS: RegionPreset[] = [
     { name: "Col du Telegraphe", center: [45.2031, 6.4436], zoom: 14, category: "Alpes" },
     { name: "Alpe d'Huez", center: [45.0922, 6.0703], zoom: 13, category: "Alpes" },
     { name: "Col de la Croix de Fer", center: [45.2264, 6.2047], zoom: 14, category: "Alpes" },
-
-    // === ALPES-MARITIMES / CÔTE D'AZUR ===
+    // === CÔTE D'AZUR ===
     { name: "Col de Turini", center: [43.9797, 7.3917], zoom: 14, category: "Côte d'Azur" },
-    { name: "Col de la Bonette-Restefond", center: [44.3261, 6.8072], zoom: 13, category: "Côte d'Azur" },
     { name: "Col de Vence", center: [43.7567, 7.0667], zoom: 14, category: "Côte d'Azur" },
     { name: "Route Napoléon", center: [43.8333, 6.8833], zoom: 11, category: "Côte d'Azur" },
-    { name: "Gorges du Verdon", center: [43.7500, 6.3333], zoom: 12, category: "Côte d'Azur" },
+    { name: "Gorges du Verdon", center: [43.75, 6.3333], zoom: 12, category: "Côte d'Azur" },
     { name: "Col de Braus", center: [43.8667, 7.3833], zoom: 14, category: "Côte d'Azur" },
-
     // === PROVENCE ===
     { name: "Mont Ventoux", center: [44.1736, 5.2789], zoom: 13, category: "Provence" },
     { name: "Col de la Cayolle", center: [44.2583, 6.7458], zoom: 14, category: "Provence" },
-
     // === PYRÉNÉES ===
     { name: "Col du Tourmalet", center: [42.9083, -0.1456], zoom: 14, category: "Pyrénées" },
     { name: "Col d'Aubisque", center: [42.9714, -0.3397], zoom: 14, category: "Pyrénées" },
@@ -64,257 +47,206 @@ const REGION_PRESETS: RegionPreset[] = [
     { name: "Col de Peyresourde", center: [42.7969, 0.4492], zoom: 14, category: "Pyrénées" },
     { name: "Col du Portet d'Aspet", center: [42.9297, 0.8742], zoom: 14, category: "Pyrénées" },
     { name: "Col de Vars", center: [44.5381, 6.7028], zoom: 14, category: "Pyrénées" },
-
     // === VOSGES ===
     { name: "Col de la Schlucht", center: [48.0631, 7.0228], zoom: 14, category: "Vosges" },
     { name: "Grand Ballon", center: [47.9019, 7.0989], zoom: 13, category: "Vosges" },
     { name: "Col du Ballon d'Alsace", center: [47.8208, 6.8372], zoom: 14, category: "Vosges" },
-
     // === MASSIF CENTRAL ===
     { name: "Puy de Dôme", center: [45.7725, 2.9644], zoom: 13, category: "Massif Central" },
     { name: "Col du Pas de Peyrol", center: [45.1094, 2.6817], zoom: 14, category: "Massif Central" },
-
-    // === ÎLE-DE-FRANCE & ENVIRONS ===
+    // === ÎLE-DE-FRANCE ===
     { name: "Forêt de Fontainebleau", center: [48.4047, 2.6989], zoom: 12, category: "Île-de-France" },
-    { name: "Forêt de Rambouillet", center: [48.6439, 1.8250], zoom: 12, category: "Île-de-France" },
+    { name: "Forêt de Rambouillet", center: [48.6439, 1.825], zoom: 12, category: "Île-de-France" },
     { name: "Vallée de Chevreuse", center: [48.7072, 2.0347], zoom: 13, category: "Île-de-France" },
-    { name: "Routes du Vexin", center: [49.1000, 1.7500], zoom: 12, category: "Île-de-France" },
-    { name: "Forêt de Compiègne", center: [49.3833, 2.9000], zoom: 12, category: "Île-de-France" },
-    { name: "Côtes de Beaune (Bourgogne)", center: [47.0167, 4.8333], zoom: 12, category: "Île-de-France" },
+    { name: "Routes du Vexin", center: [49.1, 1.75], zoom: 12, category: "Île-de-France" },
+    { name: "Forêt de Compiègne", center: [49.3833, 2.9], zoom: 12, category: "Île-de-France" },
 ];
 
-// Dynamically import the map component (Leaflet requires browser)
 const MapComponent = dynamic(() => import("./MapComponent"), {
     ssr: false,
     loading: () => (
-        <div className="w-full h-full bg-zinc-900 flex items-center justify-center">
-            <div className="text-zinc-500 font-mono animate-pulse">LOADING MAP...</div>
+        <div className="w-full h-full grid place-items-center">
+            <div className="kicker text-ice animate-pulse">Chargement de la carte…</div>
         </div>
-    )
+    ),
 });
 
-// Storage key
-const STORAGE_KEY = "projectd_routes";
-
-// OSRM API for road routing
+// OSRM road routing
 async function getRouteFromOSRM(waypoints: LatLng[]): Promise<{ geometry: LatLng[]; distance: number } | null> {
     if (waypoints.length < 2) return null;
-
-    // Format: lon,lat;lon,lat;...
-    const coords = waypoints.map(p => `${p[1]},${p[0]}`).join(';');
+    const coords = waypoints.map((p) => `${p[1]},${p[0]}`).join(";");
     const url = `https://router.project-osrm.org/route/v1/driving/${coords}?overview=full&geometries=geojson`;
 
     try {
         const response = await fetch(url);
         const data = await response.json();
-
-        if (data.code === 'Ok' && data.routes?.[0]) {
+        if (data.code === "Ok" && data.routes?.[0]) {
             const route = data.routes[0];
-            // Convert GeoJSON coordinates [lon, lat] to LatLng [lat, lon]
             const geometry: LatLng[] = route.geometry.coordinates.map(
                 (coord: [number, number]) => [coord[1], coord[0]] as LatLng
             );
-            return {
-                geometry,
-                distance: route.distance / 1000 // Convert m to km
-            };
+            return { geometry, distance: route.distance / 1000 };
         }
     } catch (error) {
-        console.error('OSRM routing error:', error);
+        console.error("OSRM routing error:", error);
     }
     return null;
 }
 
+// Real GPX parsing (trkpt / rtept / wpt)
+function parseGPX(xmlText: string): LatLng[] {
+    const doc = new DOMParser().parseFromString(xmlText, "application/xml");
+    if (doc.querySelector("parsererror")) return [];
+
+    let nodes = Array.from(doc.querySelectorAll("trkpt"));
+    if (nodes.length === 0) nodes = Array.from(doc.querySelectorAll("rtept"));
+    if (nodes.length === 0) nodes = Array.from(doc.querySelectorAll("wpt"));
+
+    const points = nodes
+        .map((el) => [parseFloat(el.getAttribute("lat") || ""), parseFloat(el.getAttribute("lon") || "")] as LatLng)
+        .filter(([lat, lon]) => Number.isFinite(lat) && Number.isFinite(lon));
+
+    // Downsample very dense tracks to keep the app snappy
+    const MAX_POINTS = 600;
+    if (points.length > MAX_POINTS) {
+        const step = Math.ceil(points.length / MAX_POINTS);
+        const sampled = points.filter((_, i) => i % step === 0);
+        if (sampled[sampled.length - 1] !== points[points.length - 1]) sampled.push(points[points.length - 1]);
+        return sampled;
+    }
+    return points;
+}
+
+type Mode = "DRAW" | "TRACK" | "IMPORT";
+
 export default function RouteBuilderPage() {
     const router = useRouter();
 
-    // États
-    const [mode, setMode] = useState<"DRAW" | "IMPORT" | "TRACK">("DRAW");
-    const [waypoints, setWaypoints] = useState<LatLng[]>([]); // Points cliqués par l'user
-    const [routeGeometry, setRouteGeometry] = useState<LatLng[]>([]); // Route calculée
+    // Route state
+    const [mode, setMode] = useState<Mode>("DRAW");
+    const [waypoints, setWaypoints] = useState<LatLng[]>([]);
+    const [routeGeometry, setRouteGeometry] = useState<LatLng[]>([]);
     const [routeName, setRouteName] = useState("");
     const [distance, setDistance] = useState(0);
     const [isPanelOpen, setIsPanelOpen] = useState(true);
-    const [savedRoutes, setSavedRoutes] = useState<RouteData[]>([]);
     const [isCalculating, setIsCalculating] = useState(false);
-    const [snapToRoad, setSnapToRoad] = useState(true); // Active par défaut
+    const [snapToRoad, setSnapToRoad] = useState(true);
+    const [importError, setImportError] = useState<string | null>(null);
 
-    // GPS Tracking states
+    // GPS tracking state
     const [isRecording, setIsRecording] = useState(false);
     const [gpsTrack, setGpsTrack] = useState<LatLng[]>([]);
     const [currentPosition, setCurrentPosition] = useState<LatLng | null>(null);
-    const [gpsAccuracy, setGpsAccuracy] = useState<number>(0);
+    const [gpsAccuracy, setGpsAccuracy] = useState(0);
     const [gpsError, setGpsError] = useState<string | null>(null);
     const watchIdRef = useRef<number | null>(null);
+    const gpsTrackRef = useRef<LatLng[]>([]);
 
-    // Nouveaux états pour améliorer le processus
-    const [routeType, setRouteType] = useState<"DOWNHILL" | "UPHILL" | "MIXED">("DOWNHILL");
-    const [difficulty, setDifficulty] = useState<"EASY" | "MEDIUM" | "HARD" | "LEGENDARY">("MEDIUM");
+    // Config state
+    const [routeType, setRouteType] = useState<UserRoute["type"]>("DOWNHILL");
+    const [difficulty, setDifficulty] = useState<Difficulty>("MEDIUM");
     const [selectedRegion, setSelectedRegion] = useState<RegionPreset>(REGION_PRESETS[0]);
-    const [selectedCategory, setSelectedCategory] = useState<string>("Alpes");
+    const [selectedCategory, setSelectedCategory] = useState("Alpes");
     const [step, setStep] = useState<1 | 2 | 3>(1);
 
-    // Catégories uniques
-    const categories = [...new Set(REGION_PRESETS.map(r => r.category).filter(Boolean))] as string[];
+    const categories = [...new Set(REGION_PRESETS.map((r) => r.category).filter(Boolean))] as string[];
+    const filteredRegions = REGION_PRESETS.filter((r) => r.category === selectedCategory);
 
-    // Régions filtrées par catégorie
-    const filteredRegions = REGION_PRESETS.filter(r => r.category === selectedCategory);
-
-    // Charger routes existantes
+    // Recompute route when waypoints change
     useEffect(() => {
-        const saved = localStorage.getItem(STORAGE_KEY);
-        if (saved) {
-            try { setSavedRoutes(JSON.parse(saved)); } catch { }
-        }
-    }, []);
+        let cancelled = false;
 
-    // Calculer la route quand les waypoints changent
-    useEffect(() => {
         const calculateRoute = async () => {
             if (waypoints.length < 2) {
                 setRouteGeometry([]);
                 setDistance(0);
                 return;
             }
-
             if (snapToRoad) {
                 setIsCalculating(true);
                 const result = await getRouteFromOSRM(waypoints);
+                if (cancelled) return;
                 setIsCalculating(false);
-
                 if (result) {
                     setRouteGeometry(result.geometry);
                     setDistance(result.distance);
-                } else {
-                    // Fallback: ligne droite
-                    setRouteGeometry(waypoints);
-                    setDistance(calculateStraightDistance(waypoints));
+                    return;
                 }
-            } else {
-                setRouteGeometry(waypoints);
-                setDistance(calculateStraightDistance(waypoints));
             }
+            setRouteGeometry(waypoints);
+            setDistance(pathDistanceKm(waypoints));
         };
 
         calculateRoute();
+        return () => {
+            cancelled = true;
+        };
     }, [waypoints, snapToRoad]);
 
-    // Calcul distance en ligne droite (Haversine)
-    const calculateStraightDistance = (pts: LatLng[]): number => {
-        if (pts.length < 2) return 0;
-
-        let total = 0;
-        for (let i = 1; i < pts.length; i++) {
-            const [lat1, lon1] = pts[i - 1];
-            const [lat2, lon2] = pts[i];
-
-            const R = 6371;
-            const dLat = (lat2 - lat1) * Math.PI / 180;
-            const dLon = (lon2 - lon1) * Math.PI / 180;
-            const a =
-                Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-                Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-                Math.sin(dLon / 2) * Math.sin(dLon / 2);
-            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-            total += R * c;
-        }
-        return total;
-    };
-
-    // Ajouter un waypoint
     const addWaypoint = useCallback((latlng: LatLng) => {
-        setWaypoints(prev => [...prev, latlng]);
+        setWaypoints((prev) => [...prev, latlng]);
     }, []);
 
-    // Annuler dernier point
-    const undoLastWaypoint = () => {
-        if (waypoints.length === 0) return;
-        setWaypoints(prev => prev.slice(0, -1));
-    };
+    const undoLastWaypoint = () => setWaypoints((prev) => prev.slice(0, -1));
 
-    // Reset
     const resetRoute = () => {
         setWaypoints([]);
         setRouteGeometry([]);
         setDistance(0);
     };
 
-    // Reset complet
     const fullReset = () => {
         resetRoute();
         setRouteName("");
         setRouteType("DOWNHILL");
         setDifficulty("MEDIUM");
         setStep(1);
-        // Also reset GPS tracking
         setGpsTrack([]);
+        gpsTrackRef.current = [];
         setCurrentPosition(null);
         setGpsError(null);
+        setImportError(null);
     };
 
-    // === GPS TRACKING FUNCTIONS ===
-
-    // Start GPS tracking with high accuracy
+    /* === GPS TRACKING === */
     const startGpsTracking = () => {
         if (!navigator.geolocation) {
             setGpsError("La géolocalisation n'est pas supportée par ce navigateur.");
             return;
         }
-
         setGpsError(null);
         setGpsTrack([]);
+        gpsTrackRef.current = [];
         setIsRecording(true);
 
-        // High accuracy options for optimal precision
-        const options: PositionOptions = {
-            enableHighAccuracy: true, // Use GPS if available
-            timeout: 10000, // Wait up to 10s for position
-            maximumAge: 0 // Don't use cached position
-        };
+        watchIdRef.current = navigator.geolocation.watchPosition(
+            (position) => {
+                const { latitude, longitude, accuracy } = position.coords;
+                const newPoint: LatLng = [latitude, longitude];
+                setCurrentPosition(newPoint);
+                setGpsAccuracy(accuracy);
 
-        // Success callback - called on each position update
-        const onSuccess = (position: GeolocationPosition) => {
-            const { latitude, longitude, accuracy } = position.coords;
-            const newPoint: LatLng = [latitude, longitude];
-
-            setCurrentPosition(newPoint);
-            setGpsAccuracy(accuracy);
-
-            // Add point to track (filter out duplicates)
-            setGpsTrack(prev => {
-                if (prev.length === 0) return [newPoint];
-
-                const lastPoint = prev[prev.length - 1];
-                // Only add if moved more than 3 meters (to avoid GPS noise)
-                const distance = calculatePointDistance(lastPoint, newPoint);
-                if (distance > 0.003) { // ~3 meters
-                    return [...prev, newPoint];
+                const track = gpsTrackRef.current;
+                const last = track[track.length - 1];
+                // Ignore GPS noise below ~3 m
+                if (!last || distanceKm(last, newPoint) > 0.003) {
+                    gpsTrackRef.current = [...track, newPoint];
+                    setGpsTrack(gpsTrackRef.current);
                 }
-                return prev;
-            });
-        };
-
-        // Error callback
-        const onError = (error: GeolocationPositionError) => {
-            switch (error.code) {
-                case error.PERMISSION_DENIED:
-                    setGpsError("Permission GPS refusée. Autorise l'accès à ta position.");
-                    break;
-                case error.POSITION_UNAVAILABLE:
-                    setGpsError("Position GPS indisponible.");
-                    break;
-                case error.TIMEOUT:
-                    setGpsError("Délai dépassé pour obtenir la position.");
-                    break;
-            }
-            setIsRecording(false);
-        };
-
-        // Start watching position
-        watchIdRef.current = navigator.geolocation.watchPosition(onSuccess, onError, options);
+            },
+            (error) => {
+                const messages: Record<number, string> = {
+                    1: "Permission GPS refusée. Autorise l'accès à ta position.",
+                    2: "Position GPS indisponible.",
+                    3: "Délai dépassé pour obtenir la position.",
+                };
+                setGpsError(messages[error.code] || "Erreur GPS inconnue.");
+                setIsRecording(false);
+            },
+            { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+        );
     };
 
-    // Stop GPS tracking
     const stopGpsTracking = () => {
         if (watchIdRef.current !== null) {
             navigator.geolocation.clearWatch(watchIdRef.current);
@@ -322,30 +254,16 @@ export default function RouteBuilderPage() {
         }
         setIsRecording(false);
 
-        // Convert GPS track to waypoints
-        if (gpsTrack.length >= 2) {
-            setWaypoints(gpsTrack);
-            setRouteGeometry(gpsTrack);
-            setDistance(calculateStraightDistance(gpsTrack));
-            setSnapToRoad(false); // Force line-of-sight to prevent OSRM crash on dense tracks
-            setStep(3); // Move directly to naming step
+        const track = gpsTrackRef.current;
+        if (track.length >= 2) {
+            setWaypoints(track);
+            setRouteGeometry(track);
+            setDistance(pathDistanceKm(track));
+            setSnapToRoad(false); // dense track: keep raw geometry
+            setStep(3);
         }
     };
 
-    // Calculate distance between two points in km
-    const calculatePointDistance = (p1: LatLng, p2: LatLng): number => {
-        const R = 6371;
-        const dLat = (p2[0] - p1[0]) * Math.PI / 180;
-        const dLon = (p2[1] - p1[1]) * Math.PI / 180;
-        const a =
-            Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-            Math.cos(p1[0] * Math.PI / 180) * Math.cos(p2[0] * Math.PI / 180) *
-            Math.sin(dLon / 2) * Math.sin(dLon / 2);
-        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-        return R * c;
-    };
-
-    // Cleanup GPS tracking on unmount
     useEffect(() => {
         return () => {
             if (watchIdRef.current !== null) {
@@ -354,57 +272,61 @@ export default function RouteBuilderPage() {
         };
     }, []);
 
-    // Sauvegarder
+    /* === SAVE === */
     const saveRoute = () => {
         if (waypoints.length < 2 || !routeName.trim()) return;
 
-        const newRoute: RouteData = {
+        const newRoute: UserRoute = {
             id: Date.now().toString(),
-            name: routeName,
+            name: routeName.trim(),
             points: waypoints,
             routeGeometry,
             distance,
-            createdAt: new Date().toISOString().split('T')[0],
+            createdAt: new Date().toISOString(),
             type: routeType,
             difficulty,
             region: selectedRegion.name,
         };
 
-        const updated = [...savedRoutes, newRoute];
-        setSavedRoutes(updated);
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
-
+        saveRoutes([...loadRoutes(), newRoute]);
         fullReset();
         router.push("/conquest");
     };
 
-    // GPX Import
-    const handleGPXUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    /* === GPX IMPORT === */
+    const handleGPXUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
+        e.target.value = "";
         if (!file) return;
 
-        const fakePoints: LatLng[] = [
-            [43.9797, 7.3917],
-            [43.9820, 7.3950],
-            [43.9850, 7.4000],
-            [43.9880, 7.4050],
-        ];
-        setWaypoints(fakePoints);
-        setRouteName(file.name.replace(".gpx", ""));
-        setStep(3);
+        setImportError(null);
+        try {
+            const text = await file.text();
+            const points = parseGPX(text);
+            if (points.length < 2) {
+                setImportError("Fichier GPX invalide ou sans points de trace.");
+                return;
+            }
+            setWaypoints(points);
+            setRouteGeometry(points);
+            setDistance(pathDistanceKm(points));
+            setSnapToRoad(false);
+            setRouteName(file.name.replace(/\.gpx$/i, ""));
+            setStep(3);
+        } catch {
+            setImportError("Impossible de lire ce fichier.");
+        }
     };
 
-    const difficultyColors = {
-        EASY: "text-toxic-green border-toxic-green",
-        MEDIUM: "text-toxic-cyan border-toxic-cyan",
-        HARD: "text-toxic-magenta border-toxic-magenta",
-        LEGENDARY: "text-toxic-yellow border-toxic-yellow",
-    };
+    const modeTabs: { key: Mode; label: string; icon: typeof Pencil; tone: string }[] = [
+        { key: "DRAW", label: "Tracer", icon: Pencil, tone: "text-ice" },
+        { key: "TRACK", label: "GPS", icon: Navigation2, tone: "text-mint" },
+        { key: "IMPORT", label: "Import", icon: Upload, tone: "text-haze" },
+    ];
 
     return (
-        <div className="h-[calc(100vh-3.5rem)] w-full bg-black relative overflow-hidden font-pixel">
-
-            {/* MAP (Full screen) */}
+        <div className="map-screen">
+            {/* MAP */}
             <div className="absolute inset-0">
                 <MapComponent
                     waypoints={waypoints}
@@ -416,231 +338,196 @@ export default function RouteBuilderPage() {
                 />
             </div>
 
-            {/* HUD OVERLAY - Top Left */}
-            <div className="absolute top-6 left-6 z-[1000] pointer-events-none drop-shadow-md">
-                <h1 className="text-xl font-bold text-white tracking-widest uppercase glitch-hover flex flex-col gap-1">
-                    <span className="text-zinc-500 text-[10px] tracking-widest">PROJECT D // SYSTEM</span>
-                    <span>ROUTE BUILDER_</span>
-                </h1>
-                <div className="flex items-center gap-2 mt-2">
-                    <span className="text-toxic-cyan text-[10px] uppercase">STATUS:</span>
-                    <span className="text-white text-[10px] uppercase">{mode} MODE - STAGE {step}</span>
-                </div>
-            </div>
-
-            {/* HUD OVERLAY - Stats */}
-            <div className="absolute top-6 right-6 z-[1000] text-right pointer-events-none drop-shadow-md">
-                <div className="text-zinc-500 text-[10px] font-bold tracking-widest uppercase mb-2">{selectedRegion.name}</div>
-                <div className="flex justify-end items-center gap-2 text-sm font-bold tracking-widest uppercase">
-                    <span className="text-zinc-500">WPT_</span>
-                    <span className="text-white">{waypoints.length}</span>
-                </div>
-                <div className="flex justify-end items-center gap-2 text-sm font-bold tracking-widest uppercase">
-                    <span className="text-zinc-500">DST_</span>
-                    <span className="text-white">
-                        {isCalculating ? "CALC..." : `${distance.toFixed(2)} KM`}
-                    </span>
-                </div>
-                {snapToRoad && mode === "DRAW" && (
-                    <div className="text-toxic-green text-[10px] font-bold tracking-widest uppercase mt-2">
-                        OSRM_SNAP_ACTIVE
+            {/* TOP-RIGHT STATS */}
+            <div className="absolute top-3 right-3 z-[500] pointer-events-none">
+                <div className="hud px-4 py-3 text-right">
+                    <div className="label mb-1">{selectedRegion.name}</div>
+                    <div className="flex justify-end items-baseline gap-4">
+                        <div>
+                            <span className="mono-num text-white font-bold text-lg">{waypoints.length}</span>
+                            <span className="label ml-1">wpt</span>
+                        </div>
+                        <div>
+                            <span className="mono-num text-gold font-bold text-lg">
+                                {isCalculating ? "…" : distance.toFixed(2)}
+                            </span>
+                            <span className="label ml-1">km</span>
+                        </div>
                     </div>
-                )}
+                    {snapToRoad && mode === "DRAW" && (
+                        <div className="label text-mint! mt-1">Snap route actif</div>
+                    )}
+                </div>
             </div>
 
-            {/* GPS RECENTER BUTTON */}
+            {/* LOCATE BUTTON */}
             <button
                 onClick={() => {
-                    if (navigator.geolocation) {
-                        navigator.geolocation.getCurrentPosition(
-                            (position) => {
-                                const newLoc: LatLng = [position.coords.latitude, position.coords.longitude];
-                                setCurrentPosition(newLoc);
-                                setSelectedRegion((prev) => ({
-                                    ...prev,
-                                    center: newLoc,
-                                    zoom: 15
-                                }));
-                            },
-                            (error) => console.error("GPS Error", error),
-                            { enableHighAccuracy: true }
-                        );
-                    }
+                    navigator.geolocation?.getCurrentPosition(
+                        (position) => {
+                            const loc: LatLng = [position.coords.latitude, position.coords.longitude];
+                            setCurrentPosition(loc);
+                            setSelectedRegion((prev) => ({ ...prev, center: loc, zoom: 15 }));
+                        },
+                        (error) => console.error("GPS Error", error),
+                        { enableHighAccuracy: true }
+                    );
                 }}
-                className="absolute bottom-6 right-6 z-[1000] bg-black/40 border-[1px] border-zinc-800 p-3 text-toxic-cyan hover:bg-toxic-cyan hover:text-black transition-colors backdrop-blur-sm drop-shadow-md flex items-center justify-center gap-2"
+                className="absolute bottom-5 right-3 z-[500] hud rounded-xl! p-3 text-ice hover:bg-ice hover:text-black transition-colors flex items-center gap-2"
                 title="Centrer sur ma position"
             >
                 <Navigation2 size={16} />
-                <span className="text-[10px] uppercase font-bold tracking-widest hidden md:inline-block">[ LOCATE ]</span>
+                <span className="label text-inherit! hidden md:inline">Localiser</span>
             </button>
 
-            {/* SIDE PANEL */}
+            {/* ===== PANEL ===== */}
             <AnimatePresence>
                 {isPanelOpen && (
                     <motion.div
-                        initial={{ x: -400 }}
-                        animate={{ x: 0 }}
-                        exit={{ x: -400 }}
-                        transition={{ duration: 0.2 }}
-                        className="absolute top-14 md:top-20 left-0 md:left-4 bottom-0 md:bottom-4 w-full md:w-[340px] z-[1000] flex flex-col p-4 md:p-0"
+                        initial={{ x: -420, opacity: 0 }}
+                        animate={{ x: 0, opacity: 1 }}
+                        exit={{ x: -420, opacity: 0 }}
+                        transition={{ type: "spring", stiffness: 320, damping: 32 }}
+                        className="absolute inset-x-2 bottom-2 top-auto max-h-[62dvh] md:inset-auto md:top-3 md:left-3 md:bottom-3 md:w-[360px] md:max-h-none z-[600] flex flex-col"
                     >
-                        <div className="bg-black/95 backdrop-blur-md border-2 border-zinc-800 hard-border flex-1 flex flex-col overflow-hidden shadow-[0_0_20px_rgba(0,0,0,0.8)]">
-
-                            {/* Mobile Close Button (inside panel) */}
+                        <div className="hud flex-1 flex flex-col overflow-hidden">
+                            {/* Mobile close */}
                             <button
                                 onClick={() => setIsPanelOpen(false)}
-                                className="md:hidden w-full py-3 bg-red-500/10 border-b-2 border-red-500/30 text-red-500 text-xs font-bold uppercase tracking-widest text-center hover:bg-red-500 hover:text-black transition-colors"
+                                className="md:hidden flex items-center justify-center gap-2 py-2.5 border-b border-line text-zinc-500 hover:text-white transition-colors label"
                             >
-                                ↓ FERMER LE PANNEAU ↓
+                                <X size={13} /> Fermer le panneau
                             </button>
 
-                            {/* Mode Tabs */}
-                            <div className="flex border-b-2 border-zinc-800">
-                                <button
-                                    onClick={() => { setMode("DRAW"); setStep(1); }}
-                                    className={`flex-1 flex items-center justify-center gap-1 py-3 text-sm font-bold tracking-widest uppercase transition-colors ${mode === "DRAW"
-                                        ? "bg-toxic-cyan/20 text-toxic-cyan border-b-2 border-toxic-cyan shadow-[0_0_10px_rgba(0,255,255,0.2)]"
-                                        : "text-zinc-500 hover:text-zinc-300"
-                                        }`}
-                                >
-                                    <Pencil size={14} /> TRACER
-                                </button>
-                                <button
-                                    onClick={() => { setMode("TRACK"); setStep(1); fullReset(); }}
-                                    className={`flex-1 flex items-center justify-center gap-1 py-3 text-sm font-bold tracking-widest uppercase transition-colors ${mode === "TRACK"
-                                        ? "bg-toxic-green/20 text-toxic-green border-b-2 border-toxic-green shadow-[0_0_10px_rgba(0,255,65,0.2)]"
-                                        : "text-zinc-500 hover:text-zinc-300"
-                                        }`}
-                                >
-                                    <Navigation2 size={14} /> GPS
-                                </button>
-                                <button
-                                    onClick={() => { setMode("IMPORT"); setStep(1); }}
-                                    className={`flex-1 flex items-center justify-center gap-1 py-3 text-sm font-bold tracking-widest uppercase transition-colors ${mode === "IMPORT"
-                                        ? "bg-toxic-magenta/20 text-toxic-magenta border-b-2 border-toxic-magenta shadow-[0_0_10px_rgba(255,0,255,0.2)]"
-                                        : "text-zinc-500 hover:text-zinc-300"
-                                        }`}
-                                >
-                                    <Upload size={14} /> IMPORT
-                                </button>
+                            {/* Mode tabs */}
+                            <div className="flex border-b border-line">
+                                {modeTabs.map((tab) => {
+                                    const active = mode === tab.key;
+                                    const Icon = tab.icon;
+                                    return (
+                                        <button
+                                            key={tab.key}
+                                            onClick={() => {
+                                                setMode(tab.key);
+                                                setStep(1);
+                                                if (tab.key === "TRACK") fullReset();
+                                            }}
+                                            className={`relative flex-1 flex items-center justify-center gap-1.5 py-3.5 font-display font-semibold uppercase tracking-widest text-xs transition-colors ${active ? tab.tone : "text-zinc-500 hover:text-zinc-300"
+                                                }`}
+                                        >
+                                            {active && (
+                                                <motion.span
+                                                    layoutId="builder-tab"
+                                                    className="absolute bottom-0 inset-x-4 h-0.5 bg-current"
+                                                />
+                                            )}
+                                            <Icon size={13} /> {tab.label}
+                                        </button>
+                                    );
+                                })}
                             </div>
 
                             {/* Content */}
                             <div className="flex-1 p-4 space-y-4 overflow-y-auto">
-
-                                {/* STEP 1: Configuration */}
+                                {/* === STEP 1: CONFIG (DRAW) === */}
                                 {step === 1 && mode === "DRAW" && (
-                                    <motion.div
-                                        initial={{ opacity: 0 }}
-                                        animate={{ opacity: 1 }}
-                                        className="space-y-4"
-                                    >
-                                        <div className="text-toxic-cyan font-bold tracking-widest uppercase text-[10px]">
-                                            {"// STAGE 1 : ROUTE CONF"}
-                                        </div>
+                                    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
+                                        <div className="kicker text-ice">Étape 1 — Configuration</div>
 
-                                        {/* Région */}
+                                        {/* Region */}
                                         <div>
-                                            <label className="text-zinc-500 text-[10px] block mb-2 font-bold tracking-widest uppercase">RÉGION</label>
-
-                                            {/* Category Tabs */}
-                                            <div className="flex flex-wrap gap-2 mb-3">
+                                            <label className="label block mb-2">Région</label>
+                                            <div className="flex flex-wrap gap-1.5 mb-2.5">
                                                 {categories.map((cat) => (
                                                     <button
                                                         key={cat}
                                                         onClick={() => setSelectedCategory(cat)}
-                                                        className={`px-3 py-1.5 text-xs font-bold transition-colors hard-border border-2 ${selectedCategory === cat
-                                                            ? "bg-toxic-cyan text-black border-toxic-cyan shadow-[0_0_10px_rgba(0,255,255,0.4)]"
-                                                            : "bg-black text-zinc-500 border-zinc-800 hover:border-zinc-500"
-                                                            } uppercase tracking-wider`}
+                                                        className={`px-3 py-1.5 rounded-full text-[11px] font-display font-bold uppercase tracking-wider border transition-colors ${selectedCategory === cat
+                                                            ? "bg-ice text-black border-ice"
+                                                            : "bg-white/5 border-line text-zinc-400 hover:text-white"
+                                                            }`}
                                                     >
                                                         {cat}
                                                     </button>
                                                 ))}
                                             </div>
-
-                                            {/* Cols in selected category */}
-                                            <div className="bg-black border-2 border-zinc-800 hard-border p-2 max-h-40 overflow-y-auto space-y-1">
+                                            <div className="rounded-xl border border-line bg-black/25 p-1.5 max-h-40 overflow-y-auto space-y-1">
                                                 {filteredRegions.map((region) => (
                                                     <button
                                                         key={region.name}
                                                         onClick={() => setSelectedRegion(region)}
-                                                        className={`w-full text-left p-2 text-xs font-bold transition-colors flex items-center justify-between hard-border border-2 uppercase tracking-wide ${selectedRegion.name === region.name
-                                                            ? "bg-toxic-cyan/20 border-toxic-cyan text-toxic-cyan shadow-[0_0_10px_rgba(0,255,255,0.2)]"
-                                                            : "border-transparent hover:border-zinc-800 text-zinc-400"
+                                                        className={`w-full text-left px-3 py-2 rounded-lg text-xs font-semibold uppercase tracking-wide transition-colors flex items-center justify-between ${selectedRegion.name === region.name
+                                                            ? "bg-ice/12 text-ice"
+                                                            : "text-zinc-400 hover:bg-white/5 hover:text-white"
                                                             }`}
                                                     >
                                                         <span>{region.name}</span>
-                                                        {selectedRegion.name === region.name && (
-                                                            <span className="text-toxic-cyan">✓</span>
-                                                        )}
+                                                        {selectedRegion.name === region.name && <span>✓</span>}
                                                     </button>
                                                 ))}
                                             </div>
                                         </div>
 
-                                        {/* Mode Snap to Road */}
+                                        {/* Snap mode */}
                                         <div>
-                                            <label className="text-zinc-500 text-[10px] block mb-2 font-bold tracking-widest uppercase">MODE TRACÉ</label>
-                                            <div className="flex gap-2">
+                                            <label className="label block mb-2">Mode tracé</label>
+                                            <div className="grid grid-cols-2 gap-2">
                                                 <button
                                                     onClick={() => setSnapToRoad(true)}
-                                                    className={`flex-1 flex items-center justify-center gap-2 p-3 font-bold border-2 hard-border transition-colors uppercase tracking-widest ${snapToRoad
-                                                        ? "bg-toxic-green/20 border-toxic-green text-toxic-green shadow-[0_0_10px_rgba(0,255,65,0.2)]"
-                                                        : "bg-black border-zinc-800 text-zinc-500 hover:border-zinc-500"
+                                                    className={`flex items-center justify-center gap-2 py-3 rounded-xl border text-xs font-display font-bold uppercase tracking-wider transition-colors ${snapToRoad
+                                                        ? "bg-mint/12 border-mint/50 text-mint"
+                                                        : "bg-black/25 border-line text-zinc-500 hover:text-zinc-300"
                                                         }`}
                                                 >
-                                                    <Route size={16} />
-                                                    <span className="text-xs font-bold">SUIVRE LA ROUTE</span>
+                                                    <Route size={14} /> Suivre la route
                                                 </button>
                                                 <button
                                                     onClick={() => setSnapToRoad(false)}
-                                                    className={`flex-1 flex items-center justify-center gap-2 p-3 font-bold border-2 hard-border transition-colors uppercase tracking-widest ${!snapToRoad
-                                                        ? "bg-toxic-yellow/20 border-toxic-yellow text-toxic-yellow shadow-[0_0_10px_rgba(255,255,0,0.2)]"
-                                                        : "bg-black border-zinc-800 text-zinc-500 hover:border-zinc-500"
+                                                    className={`flex items-center justify-center gap-2 py-3 rounded-xl border text-xs font-display font-bold uppercase tracking-wider transition-colors ${!snapToRoad
+                                                        ? "bg-gold/12 border-gold/50 text-gold"
+                                                        : "bg-black/25 border-line text-zinc-500 hover:text-zinc-300"
                                                         }`}
                                                 >
-                                                    <Zap size={16} />
-                                                    <span className="text-xs font-bold">LIGNE DROITE</span>
+                                                    <Zap size={14} /> Ligne droite
                                                 </button>
                                             </div>
                                         </div>
 
                                         {/* Type */}
                                         <div>
-                                            <label className="text-zinc-500 text-[10px] block mb-2 font-bold tracking-widest uppercase">TYPE</label>
-                                            <div className="flex gap-2">
+                                            <label className="label block mb-2">Type</label>
+                                            <div className="grid grid-cols-3 gap-2">
                                                 {[
-                                                    { value: "DOWNHILL", label: "DESCENTE", icon: TrendingDown },
-                                                    { value: "UPHILL", label: "MONTÉE", icon: TrendingUp },
-                                                    { value: "MIXED", label: "MIXTE", icon: Navigation },
+                                                    { value: "DOWNHILL", label: "Descente", icon: TrendingDown },
+                                                    { value: "UPHILL", label: "Montée", icon: TrendingUp },
+                                                    { value: "MIXED", label: "Mixte", icon: Navigation },
                                                 ].map((t) => (
                                                     <button
                                                         key={t.value}
-                                                        onClick={() => setRouteType(t.value as typeof routeType)}
-                                                        className={`flex-1 flex flex-col items-center gap-1 p-3 font-bold border-2 hard-border transition-colors uppercase tracking-widest ${routeType === t.value
-                                                            ? "bg-toxic-magenta/20 border-toxic-magenta text-toxic-magenta shadow-[0_0_10px_rgba(255,0,255,0.2)]"
-                                                            : "bg-black border-zinc-800 text-zinc-500 hover:border-zinc-500"
+                                                        onClick={() => setRouteType(t.value as UserRoute["type"])}
+                                                        className={`flex flex-col items-center gap-1 py-3 rounded-xl border text-[11px] font-display font-bold uppercase tracking-wider transition-colors ${routeType === t.value
+                                                            ? "bg-accent/12 border-accent/50 text-accent"
+                                                            : "bg-black/25 border-line text-zinc-500 hover:text-zinc-300"
                                                             }`}
                                                     >
-                                                        <t.icon size={18} />
-                                                        <span className="text-xs font-bold">{t.label}</span>
+                                                        <t.icon size={16} />
+                                                        {t.label}
                                                     </button>
                                                 ))}
                                             </div>
                                         </div>
 
-                                        {/* Difficulté */}
+                                        {/* Difficulty */}
                                         <div>
-                                            <label className="text-zinc-500 text-[10px] block mb-2 font-bold tracking-widest uppercase">DIFFICULTÉ</label>
+                                            <label className="label block mb-2">Difficulté</label>
                                             <div className="grid grid-cols-4 gap-2">
                                                 {(["EASY", "MEDIUM", "HARD", "LEGENDARY"] as const).map((d) => (
                                                     <button
                                                         key={d}
                                                         onClick={() => setDifficulty(d)}
-                                                        className={`p-2 text-xs font-bold border-2 hard-border transition-colors uppercase tracking-widest ${difficulty === d
-                                                            ? `bg-opacity-20 ${difficultyColors[d]} bg-current shadow-[0_0_10px_currentColor]`
-                                                            : "bg-black border-zinc-800 text-zinc-500 hover:border-zinc-500"
+                                                        className={`py-2.5 rounded-xl border text-[10px] font-display font-bold uppercase tracking-wider transition-colors ${difficulty === d
+                                                            ? DIFFICULTY_STYLE[d].badge
+                                                            : "bg-black/25 border-line text-zinc-500 hover:text-zinc-300"
                                                             }`}
                                                     >
                                                         {d.slice(0, 4)}
@@ -651,279 +538,235 @@ export default function RouteBuilderPage() {
 
                                         <button
                                             onClick={() => setStep(2)}
-                                            className="w-full border-[1px] border-toxic-cyan text-toxic-cyan hover:bg-toxic-cyan hover:text-black py-3 text-[10px] font-bold mt-4 transition-colors uppercase tracking-widest"
+                                            className="w-full py-3.5 rounded-xl bg-ice text-black font-display font-bold uppercase tracking-widest text-sm hover:bg-white transition-colors active:scale-[0.98]"
                                         >
-                                            [ CONFIRM SETTINGS ]
+                                            Confirmer →
                                         </button>
                                     </motion.div>
                                 )}
 
                                 {/* === GPS TRACK MODE === */}
                                 {mode === "TRACK" && (
-                                    <motion.div
-                                        initial={{ opacity: 0 }}
-                                        animate={{ opacity: 1 }}
-                                        className="space-y-4"
-                                    >
-                                        <div className="text-toxic-green font-bold tracking-widest uppercase text-[10px]">
-                                            {"// GPS TELEMETRY"}
+                                    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
+                                        <div className="kicker text-mint">Télémétrie GPS</div>
+
+                                        <div className="rounded-xl border border-mint/25 bg-mint/5 p-3.5 text-xs">
+                                            <p className="font-display font-bold uppercase tracking-widest text-mint mb-1">
+                                                Live tracking
+                                            </p>
+                                            <p className="text-zinc-400">
+                                                Appuie sur démarrer puis roule : ta trajectoire est enregistrée en temps réel via le GPS.
+                                            </p>
                                         </div>
 
-                                        <div className="border-[1px] border-toxic-green/30 bg-black/40 p-3 text-[10px] text-toxic-green tracking-widest uppercase">
-                                            <p className="font-bold mb-1">WARNING // LIVE TRACKING</p>
-                                            <p className="text-zinc-400">Press start and begin driving. Trajectory is recorded locally via device sensors.</p>
-                                        </div>
-
-                                        {/* GPS Error */}
                                         {gpsError && (
-                                            <div className="bg-red-500/10 border border-red-500/30 rounded p-3 text-xs text-red-400">
-                                                ⚠️ {gpsError}
+                                            <div className="rounded-xl border border-red-500/30 bg-red-500/10 p-3 text-xs text-red-400 font-semibold">
+                                                {gpsError}
                                             </div>
                                         )}
 
-                                        {/* Recording Status */}
                                         {isRecording && (
                                             <div className="space-y-3">
-                                                {/* Recording Indicator */}
-                                                <div className="flex items-center gap-3 bg-zinc-900 border border-green-500 rounded p-4">
+                                                <div className="flex items-center gap-3 rounded-xl border border-red-500/40 bg-black/30 p-3.5">
                                                     <div className="relative">
-                                                        <Disc size={24} className="text-red-500 animate-pulse" />
-                                                        <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full animate-ping"></span>
+                                                        <Disc size={22} className="text-red-500 animate-spin [animation-duration:3s]" />
+                                                        <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-red-500 rounded-full animate-ping" />
                                                     </div>
                                                     <div>
-                                                        <div className="text-red-500 font-bold text-sm">ENREGISTREMENT EN COURS</div>
-                                                        <div className="text-zinc-500 text-xs">Roule pour tracer ton touge !</div>
+                                                        <div className="text-red-400 font-display font-bold uppercase tracking-widest text-xs">
+                                                            Enregistrement…
+                                                        </div>
+                                                        <div className="text-zinc-500 text-xs">Roule pour tracer ton touge</div>
                                                     </div>
                                                 </div>
 
-                                                {/* Live Stats */}
                                                 <div className="grid grid-cols-3 gap-2">
-                                                    <div className="bg-zinc-800/50 p-3 rounded text-center">
-                                                        <div className="text-2xl font-bold text-green-500">{gpsTrack.length}</div>
-                                                        <div className="text-zinc-500 text-xs">Points</div>
+                                                    <div className="rounded-xl bg-black/30 border border-line p-2.5 text-center">
+                                                        <div className="mono-num text-lg font-bold text-mint">{gpsTrack.length}</div>
+                                                        <div className="label">pts</div>
                                                     </div>
-                                                    <div className="bg-zinc-800/50 p-3 rounded text-center">
-                                                        <div className="text-2xl font-bold text-yellow-500">{calculateStraightDistance(gpsTrack).toFixed(2)}</div>
-                                                        <div className="text-zinc-500 text-xs">km</div>
+                                                    <div className="rounded-xl bg-black/30 border border-line p-2.5 text-center">
+                                                        <div className="mono-num text-lg font-bold text-gold">
+                                                            {pathDistanceKm(gpsTrack).toFixed(2)}
+                                                        </div>
+                                                        <div className="label">km</div>
                                                     </div>
-                                                    <div className="bg-zinc-800/50 p-3 rounded text-center">
-                                                        <div className="text-2xl font-bold text-blue-500">{gpsAccuracy.toFixed(0)}</div>
-                                                        <div className="text-zinc-500 text-xs">Précision (m)</div>
+                                                    <div className="rounded-xl bg-black/30 border border-line p-2.5 text-center">
+                                                        <div className="mono-num text-lg font-bold text-ice">±{gpsAccuracy.toFixed(0)}</div>
+                                                        <div className="label">m</div>
                                                     </div>
                                                 </div>
-
-                                                {/* Current Position */}
-                                                {currentPosition && (
-                                                    <div className="text-xs text-zinc-500 font-mono text-center">
-                                                        📍 {currentPosition[0].toFixed(6)}, {currentPosition[1].toFixed(6)}
-                                                    </div>
-                                                )}
                                             </div>
                                         )}
 
-                                        {/* Start/Stop Button */}
                                         {!isRecording ? (
                                             <button
                                                 onClick={startGpsTracking}
-                                                className="w-full border-[1px] border-toxic-green text-toxic-green hover:bg-toxic-green hover:text-black font-bold text-[10px] py-3 uppercase tracking-widest transition-colors"
+                                                className="w-full py-3.5 rounded-xl bg-mint text-black font-display font-bold uppercase tracking-widest text-sm hover:bg-white transition-colors active:scale-[0.98]"
                                             >
-                                                [ INIT TELEMETRY ]
+                                                Démarrer la télémétrie
                                             </button>
                                         ) : (
                                             <button
                                                 onClick={stopGpsTracking}
                                                 disabled={gpsTrack.length < 2}
-                                                className="w-full border-[1px] border-red-500 text-red-500 hover:bg-red-500 hover:text-black font-bold text-[10px] py-3 disabled:opacity-50 disabled:cursor-not-allowed uppercase tracking-widest transition-colors"
+                                                className="w-full py-3.5 rounded-xl border border-red-500/60 text-red-400 font-display font-bold uppercase tracking-widest text-sm hover:bg-red-500 hover:text-black transition-colors active:scale-[0.98] disabled:opacity-40"
                                             >
-                                                [ STOP RUN - Pts: {gpsTrack.length} ]
+                                                Stop — {gpsTrack.length} pts
                                             </button>
                                         )}
 
-                                        {/* Info */}
                                         <div className="text-zinc-600 text-xs space-y-1">
-                                            <p>💡 <strong>Conseils pour une meilleure précision :</strong></p>
+                                            <p className="font-bold text-zinc-500">Conseils précision :</p>
                                             <ul className="list-disc ml-4 space-y-0.5">
                                                 <li>Active le GPS haute précision sur ton téléphone</li>
-                                                <li>Autorise l'accès à la position en "précis"</li>
-                                                <li>Attends que la précision soit &lt; 10m avant de démarrer</li>
+                                                <li>Autorise la position en mode « précis »</li>
+                                                <li>Attends une précision &lt; 10 m avant de démarrer</li>
                                             </ul>
                                         </div>
                                     </motion.div>
                                 )}
 
-                                {/* STEP 2: Tracer */}
+                                {/* === STEP 2: WAYPOINTS === */}
                                 {step === 2 && mode === "DRAW" && (
-                                    <motion.div
-                                        initial={{ opacity: 0 }}
-                                        animate={{ opacity: 1 }}
-                                        className="space-y-4"
-                                    >
-                                        <div className="text-toxic-yellow font-bold tracking-widest uppercase text-[10px]">
-                                            {"// STAGE 2 : MAP WAYPOINTS"}
+                                    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
+                                        <div className="kicker text-gold">Étape 2 — Waypoints</div>
+
+                                        <div className={`rounded-xl border p-3.5 text-xs ${snapToRoad ? "border-mint/25 bg-mint/5" : "border-line bg-black/25"}`}>
+                                            <p className={`font-display font-bold uppercase tracking-widest mb-1 ${snapToRoad ? "text-mint" : "text-zinc-400"}`}>
+                                                {snapToRoad ? "Snap route — actif" : "Ligne directe"}
+                                            </p>
+                                            <p className="text-zinc-500">
+                                                {snapToRoad
+                                                    ? "Clique sur la carte : l'itinéraire suit automatiquement la route."
+                                                    : "Clique sur la carte : les points sont reliés en ligne droite."}
+                                            </p>
                                         </div>
 
-                                        {snapToRoad ? (
-                                            <div className="border-[1px] border-toxic-green/30 bg-black/40 p-3 text-[10px] text-toxic-green tracking-widest uppercase">
-                                                <p className="font-bold mb-1">OSRM SNAP TO ROAD // ONLINE</p>
-                                                <p className="text-zinc-400">Algorithm is routing between waypoints.</p>
-                                            </div>
-                                        ) : (
-                                            <div className="border-[1px] border-zinc-700/50 bg-black/40 p-3 text-[10px] text-zinc-400 tracking-widest uppercase">
-                                                <p className="font-bold mb-1">DIRECT LINE // ONLINE</p>
-                                                <p className="text-zinc-500">Waypoints are connected directly.</p>
-                                            </div>
-                                        )}
-
                                         {isCalculating && (
-                                            <div className="text-toxic-yellow text-[10px] font-bold animate-pulse tracking-widest uppercase">
-                                                {"// PROCESSING ROUTING ALGORITHM..."}
-                                            </div>
+                                            <div className="kicker text-gold animate-pulse">Calcul de l&apos;itinéraire…</div>
                                         )}
 
-                                        {/* Actions */}
                                         <div className="grid grid-cols-2 gap-2">
                                             <button
                                                 onClick={undoLastWaypoint}
                                                 disabled={waypoints.length === 0}
-                                                className="py-2 border-[1px] border-zinc-700 text-zinc-500 hover:border-zinc-400 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed text-[10px] font-bold transition-colors tracking-widest uppercase bg-transparent hover:bg-zinc-800"
+                                                className="py-2.5 rounded-xl border border-line text-zinc-400 hover:text-white hover:border-white/25 text-xs font-display font-bold uppercase tracking-wider transition-colors disabled:opacity-40"
                                             >
-                                                [ UNDO WPT ]
+                                                Annuler point
                                             </button>
                                             <button
                                                 onClick={resetRoute}
                                                 disabled={waypoints.length === 0}
-                                                className="py-2 border-[1px] border-red-500 text-red-500 hover:bg-red-500 hover:text-black disabled:opacity-50 disabled:cursor-not-allowed text-[10px] font-bold transition-colors tracking-widest uppercase bg-transparent"
+                                                className="py-2.5 rounded-xl border border-red-500/40 text-red-400 hover:bg-red-500 hover:text-black text-xs font-display font-bold uppercase tracking-wider transition-colors disabled:opacity-40"
                                             >
-                                                [ CLEAR ROUTE ]
+                                                Tout effacer
                                             </button>
                                         </div>
 
-                                        {/* Waypoints List */}
                                         {waypoints.length > 0 && (
-                                            <div className="border-[1px] border-zinc-800 bg-black/20 p-3 max-h-32 overflow-y-auto font-pixel">
-                                                <div className="text-zinc-600 text-[10px] font-bold tracking-widest uppercase mb-2 border-b-[1px] border-zinc-800 pb-1">SEQ_WAYPOINTS</div>
+                                            <div className="rounded-xl border border-line bg-black/25 p-3 max-h-32 overflow-y-auto">
+                                                <div className="label mb-2 border-b border-line pb-1.5">Séquence</div>
                                                 {waypoints.map((pt, i) => (
-                                                    <div key={i} className="flex items-center gap-3 text-[10px] py-1 border-b-[1px] border-zinc-800/50 last:border-0 opacity-80 hover:opacity-100 transition-opacity">
-                                                        <span className={`${i === 0 ? "text-toxic-green" : i === waypoints.length - 1 ? "text-red-500" : "text-toxic-yellow"
-                                                            } w-4`}>
-                                                            [{i + 1}]
+                                                    <div key={i} className="flex items-center gap-3 text-[11px] py-1 mono-num">
+                                                        <span
+                                                            className={`w-6 ${i === 0 ? "text-mint" : i === waypoints.length - 1 ? "text-gold" : "text-ice"}`}
+                                                        >
+                                                            {i + 1}
                                                         </span>
-                                                        <span className="text-zinc-400 tracking-widest">
-                                                            N:{pt[0].toFixed(4)} E:{pt[1].toFixed(4)}
+                                                        <span className="text-zinc-500">
+                                                            {pt[0].toFixed(4)}, {pt[1].toFixed(4)}
                                                         </span>
                                                     </div>
                                                 ))}
                                             </div>
                                         )}
 
-                                        <div className="flex gap-2 mt-4">
+                                        <div className="flex gap-2">
                                             <button
                                                 onClick={() => setStep(1)}
-                                                className="flex-1 py-3 text-[10px] font-bold tracking-widest uppercase text-zinc-500 hover:text-white border-[1px] border-zinc-800 hover:border-zinc-500 transition-colors"
+                                                className="flex-1 py-3 rounded-xl border border-line text-zinc-400 hover:text-white text-xs font-display font-bold uppercase tracking-wider transition-colors"
                                             >
-                                                [ &lt; RETOUR ]
+                                                ← Retour
                                             </button>
                                             <button
                                                 onClick={() => setStep(3)}
                                                 disabled={waypoints.length < 2}
-                                                className="flex-1 border-[1px] border-toxic-cyan text-toxic-cyan hover:bg-toxic-cyan hover:text-black py-3 text-[10px] font-bold transition-colors uppercase tracking-widest disabled:opacity-50 disabled:border-zinc-800 disabled:text-zinc-600 disabled:hover:bg-transparent"
+                                                className="flex-1 py-3 rounded-xl bg-ice text-black text-xs font-display font-bold uppercase tracking-wider hover:bg-white transition-colors disabled:opacity-40"
                                             >
-                                                [ BUILD FINAL ]
+                                                Finaliser →
                                             </button>
                                         </div>
                                     </motion.div>
                                 )}
 
-                                {/* STEP 3: Sauvegarder */}
+                                {/* === STEP 3: SAVE === */}
                                 {step === 3 && (
-                                    <motion.div
-                                        initial={{ opacity: 0 }}
-                                        animate={{ opacity: 1 }}
-                                        className="space-y-4"
-                                    >
-                                        <div className="text-toxic-green font-bold tracking-widest uppercase text-[10px]">
-                                            {"// STAGE 3 : FINAL SAVE"}
-                                        </div>
+                                    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
+                                        <div className="kicker text-mint">Étape 3 — Sauvegarde</div>
 
-                                        {/* Résumé */}
-                                        <div className="border-[1px] border-zinc-800 bg-black/20 p-4 space-y-2 font-pixel tracking-widest uppercase">
-                                            <div className="flex justify-between text-[10px] border-b-[1px] border-zinc-800/50 pb-1">
-                                                <span className="text-zinc-600">DST_CALC</span>
-                                                <span className="text-toxic-yellow">{distance.toFixed(2)} KM</span>
-                                            </div>
-                                            <div className="flex justify-between text-[10px] border-b-[1px] border-zinc-800/50 pb-1">
-                                                <span className="text-zinc-600">WPT_SEQ</span>
-                                                <span className="text-white">{waypoints.length}</span>
-                                            </div>
-                                            <div className="flex justify-between text-[10px] border-b-[1px] border-zinc-800/50 pb-1">
-                                                <span className="text-zinc-600">TERRAIN</span>
-                                                <span className="text-toxic-magenta">[{routeType}]</span>
-                                            </div>
-                                            <div className="flex justify-between text-[10px] border-b-[1px] border-zinc-800/50 pb-1">
-                                                <span className="text-zinc-600">DIFF</span>
-                                                <span className={difficultyColors[difficulty].split(' ')[0]}>[{difficulty}]</span>
-                                            </div>
-                                            <div className="flex justify-between text-[10px] border-b-[1px] border-zinc-800/50 pb-1">
-                                                <span className="text-zinc-600">ZONE</span>
-                                                <span className="text-zinc-400">{selectedRegion.name}</span>
-                                            </div>
-                                            <div className="flex justify-between text-[10px] border-b-[1px] border-zinc-800/50 pb-1">
-                                                <span className="text-zinc-600">ROUTING</span>
-                                                <span className={snapToRoad ? "text-toxic-green" : "text-toxic-yellow"}>
-                                                    [{snapToRoad ? "OSRM_SNAP" : "DIRECT_LINE"}]
-                                                </span>
-                                            </div>
+                                        <div className="rounded-xl border border-line bg-black/25 p-4 space-y-2 text-xs uppercase tracking-widest">
+                                            {[
+                                                ["Distance", `${distance.toFixed(2)} km`, "text-gold"],
+                                                ["Waypoints", `${waypoints.length}`, "text-white"],
+                                                ["Type", routeType, "text-accent"],
+                                                ["Difficulté", difficulty, DIFFICULTY_STYLE[difficulty].badge.split(" ")[0]],
+                                                ["Zone", selectedRegion.name, "text-zinc-300"],
+                                            ].map(([label, value, tone]) => (
+                                                <div key={label as string} className="flex justify-between border-b border-line/60 pb-1.5 last:border-0 last:pb-0">
+                                                    <span className="text-zinc-600 font-bold">{label}</span>
+                                                    <span className={`font-bold mono-num ${tone}`}>{value}</span>
+                                                </div>
+                                            ))}
                                         </div>
 
                                         <input
                                             type="text"
-                                            placeholder="NOM DU TRACÉ (EX: COL DE TURINI)"
-                                            className="w-full bg-black/40 border-[1px] border-zinc-700 p-3 text-white text-[10px] font-pixel uppercase tracking-widest focus:border-toxic-green outline-none transition-colors"
+                                            placeholder="Nom du tracé (ex: Col de Turini)"
+                                            className="field"
                                             value={routeName}
                                             onChange={(e) => setRouteName(e.target.value)}
                                         />
 
                                         <div className="flex gap-2">
                                             <button
-                                                onClick={() => setStep(2)}
-                                                className="flex-1 py-3 text-[10px] font-bold tracking-widest uppercase text-zinc-500 hover:text-white border-[1px] border-zinc-800 hover:border-zinc-500 transition-colors"
+                                                onClick={() => setStep(mode === "DRAW" ? 2 : 1)}
+                                                className="flex-1 py-3 rounded-xl border border-line text-zinc-400 hover:text-white text-xs font-display font-bold uppercase tracking-wider transition-colors"
                                             >
-                                                [ &lt; RETOUR ]
+                                                ← Retour
                                             </button>
                                             <button
                                                 onClick={saveRoute}
-                                                disabled={!routeName.trim()}
-                                                className="flex-1 border-[1px] border-toxic-green text-toxic-green hover:bg-toxic-green hover:text-black font-bold text-[10px] py-3 uppercase tracking-widest transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:border-zinc-800 disabled:text-zinc-600 disabled:hover:bg-transparent"
+                                                disabled={!routeName.trim() || waypoints.length < 2}
+                                                className="flex-1 py-3 rounded-xl bg-mint text-black text-xs font-display font-bold uppercase tracking-wider hover:bg-white transition-colors disabled:opacity-40"
                                             >
-                                                [ SAVE ROUTE_ ]
+                                                Sauvegarder
                                             </button>
                                         </div>
                                     </motion.div>
                                 )}
 
-                                {/* MODE IMPORT */}
+                                {/* === IMPORT MODE === */}
                                 {mode === "IMPORT" && step === 1 && (
-                                    <motion.div
-                                        initial={{ opacity: 0 }}
-                                        animate={{ opacity: 1 }}
-                                        className="space-y-4"
-                                    >
-                                        <p className="text-zinc-500 text-xs">
-                                            Importe un fichier GPX pour charger un tracé existant.
+                                    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
+                                        <div className="kicker text-haze">Import GPX</div>
+                                        <p className="text-zinc-500 text-sm">
+                                            Importe un fichier GPX (trace GPS exportée depuis Strava, Garmin, etc.) pour charger un tracé existant.
                                         </p>
 
-                                        <label className="block">
-                                            <div className="border-2 border-dashed border-zinc-700 hover:border-yellow-500 rounded p-8 text-center cursor-pointer transition-colors">
-                                                <FileDown size={40} className="mx-auto mb-3 text-zinc-500" />
-                                                <span className="text-zinc-400 text-sm block">Cliquer pour uploader</span>
-                                                <span className="text-zinc-600 text-xs">.GPX</span>
+                                        {importError && (
+                                            <div className="rounded-xl border border-red-500/30 bg-red-500/10 p-3 text-xs text-red-400 font-semibold">
+                                                {importError}
                                             </div>
-                                            <input
-                                                type="file"
-                                                accept=".gpx"
-                                                onChange={handleGPXUpload}
-                                                className="hidden"
-                                            />
+                                        )}
+
+                                        <label className="block cursor-pointer">
+                                            <div className="rounded-2xl border-2 border-dashed border-line hover:border-haze/60 p-8 text-center transition-colors group">
+                                                <FileDown size={36} className="mx-auto mb-3 text-zinc-600 group-hover:text-haze transition-colors" />
+                                                <span className="text-zinc-300 text-sm font-semibold block">Cliquer pour uploader</span>
+                                                <span className="label mt-1">.gpx</span>
+                                            </div>
+                                            <input type="file" accept=".gpx" onChange={handleGPXUpload} className="hidden" />
                                         </label>
                                     </motion.div>
                                 )}
@@ -933,23 +776,24 @@ export default function RouteBuilderPage() {
                 )}
             </AnimatePresence>
 
-            {/* Toggle Panel Button (Desktop) */}
+            {/* Panel toggle (desktop) */}
             <button
                 onClick={() => setIsPanelOpen(!isPanelOpen)}
-                className="hidden md:block absolute top-1/2 -translate-y-1/2 z-[1001] bg-black/90 border-2 border-zinc-800 p-2 hard-border hover:border-toxic-cyan transition-colors shadow-[0_0_15px_rgba(0,0,0,0.8)] text-white hover:text-toxic-cyan"
-                style={{ left: isPanelOpen ? "360px" : "16px" }}
+                className="hidden md:grid place-items-center absolute top-1/2 -translate-y-1/2 z-[610] hud rounded-xl! w-9 h-14 text-zinc-400 hover:text-white transition-all"
+                style={{ left: isPanelOpen ? "376px" : "12px" }}
             >
-                {isPanelOpen ? <ChevronLeft size={20} /> : <ChevronRight size={20} />}
+                {isPanelOpen ? <ChevronLeft size={18} /> : <ChevronRight size={18} />}
             </button>
 
-            {/* Toggle Panel Button (Mobile) */}
-            <button
-                onClick={() => setIsPanelOpen(true)}
-                className={`md:hidden absolute z-[1001] bg-black/90 border-2 border-zinc-800 p-3 hard-border hover:border-toxic-cyan transition-colors shadow-[0_0_15px_rgba(0,0,0,0.8)] text-white font-bold tracking-widest uppercase text-xs ${isPanelOpen ? 'hidden' : 'flex'} items-center gap-2`}
-                style={{ bottom: "24px", left: "50%", transform: "translateX(-50%)" }}
-            >
-                <Pencil size={16} /> OUVRIR LE PANNEAU
-            </button>
+            {/* Panel open (mobile) */}
+            {!isPanelOpen && (
+                <button
+                    onClick={() => setIsPanelOpen(true)}
+                    className="md:hidden absolute bottom-5 left-1/2 -translate-x-1/2 z-[610] hud rounded-full! px-5 py-3 flex items-center gap-2 text-white font-display font-bold uppercase tracking-widest text-xs"
+                >
+                    <Pencil size={14} className="text-accent" /> Ouvrir le panneau
+                </button>
+            )}
         </div>
     );
 }

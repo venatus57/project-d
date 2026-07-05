@@ -12,7 +12,13 @@ function ConquestDetailContent() {
 
 export default function Page() {
     return (
-        <Suspense fallback={<div className="min-h-screen bg-black flex items-center justify-center text-white">Chargement...</div>}>
+        <Suspense
+            fallback={
+                <div className="map-screen grid place-items-center">
+                    <div className="kicker text-ice animate-pulse">Chargement…</div>
+                </div>
+            }
+        >
             <ConquestDetailContent />
         </Suspense>
     );

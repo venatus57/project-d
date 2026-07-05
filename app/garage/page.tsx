@@ -1,9 +1,10 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import Link from "next/link";
-import { Plus, Trash2, Car, Shirt, Image, Link2, Gamepad2, ExternalLink, Gauge } from "lucide-react";
-import { motion } from "framer-motion";
+import { Plus, Trash2, Car, Shirt, ImageIcon, Link2, Gamepad2, ExternalLink, Gauge } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { PageShell, PageHeader, BtnLink, Btn, fadeUp, stagger } from "@/components/ui";
+import { loadJSON, saveJSON } from "../lib/storage";
 
 // --- TYPES ---
 type GearItem = {
@@ -21,323 +22,281 @@ type CarSpec = {
     link?: string;
 };
 
-// --- CLÉS LOCALSTORAGE ---
 const STORAGE_KEYS = {
     GEAR: "projectd_gear",
     CAR_SPECS: "projectd_carspecs",
 };
 
 export default function GaragePage() {
-    // --- ÉTATS (STATE) ---
     const [gearList, setGearList] = useState<GearItem[]>([]);
     const [carSpecs, setCarSpecs] = useState<CarSpec[]>([]);
     const [activeCarTab, setActiveCarTab] = useState<"REAL" | "SIM-RACING">("REAL");
     const [isLoaded, setIsLoaded] = useState(false);
 
-    // Pour les formulaires d'ajout
     const [newGear, setNewGear] = useState({ category: "", name: "" });
-    const [newSpec, setNewSpec] = useState({
-        part: "",
-        value: "",
-        imageUrl: "",
-        link: "",
-        category: "REAL" as "REAL" | "SIM-RACING"
-    });
+    const [newSpec, setNewSpec] = useState({ part: "", value: "", imageUrl: "", link: "" });
 
-    // --- CHARGEMENT INITIAL DEPUIS LOCALSTORAGE ---
     useEffect(() => {
-        const savedGear = localStorage.getItem(STORAGE_KEYS.GEAR);
-        const savedSpecs = localStorage.getItem(STORAGE_KEYS.CAR_SPECS);
-
-        if (savedGear) {
-            try { setGearList(JSON.parse(savedGear)); } catch { }
-        }
-        if (savedSpecs) {
-            try { setCarSpecs(JSON.parse(savedSpecs)); } catch { }
-        }
+        setGearList(loadJSON<GearItem[]>(STORAGE_KEYS.GEAR, []));
+        setCarSpecs(loadJSON<CarSpec[]>(STORAGE_KEYS.CAR_SPECS, []));
         setIsLoaded(true);
     }, []);
 
-    // --- SAUVEGARDE AUTOMATIQUE ---
     useEffect(() => {
-        if (isLoaded) {
-            localStorage.setItem(STORAGE_KEYS.GEAR, JSON.stringify(gearList));
-        }
+        if (isLoaded) saveJSON(STORAGE_KEYS.GEAR, gearList);
     }, [gearList, isLoaded]);
 
     useEffect(() => {
-        if (isLoaded) {
-            localStorage.setItem(STORAGE_KEYS.CAR_SPECS, JSON.stringify(carSpecs));
-        }
+        if (isLoaded) saveJSON(STORAGE_KEYS.CAR_SPECS, carSpecs);
     }, [carSpecs, isLoaded]);
 
-    // --- FONCTIONS ---
-
-    // Ajouter un vêtement
     const addGear = () => {
-        if (!newGear.category || !newGear.name) return;
-        const item: GearItem = {
-            id: Date.now().toString(),
-            category: newGear.category,
-            name: newGear.name,
-        };
-        setGearList([...gearList, item]);
+        if (!newGear.category.trim() || !newGear.name.trim()) return;
+        setGearList([...gearList, { id: Date.now().toString(), ...newGear }]);
         setNewGear({ category: "", name: "" });
     };
 
-    // Supprimer un vêtement
-    const removeGear = (id: string) => {
-        setGearList(gearList.filter((item) => item.id !== id));
-    };
-
-    // Ajouter une pièce auto
     const addSpec = () => {
-        if (!newSpec.part || !newSpec.value) return;
-        const spec: CarSpec = {
-            id: Date.now().toString(),
-            category: activeCarTab,
-            part: newSpec.part,
-            value: newSpec.value,
-            imageUrl: newSpec.imageUrl || undefined,
-            link: newSpec.link || undefined,
-        };
-        setCarSpecs([...carSpecs, spec]);
-        setNewSpec({ part: "", value: "", imageUrl: "", link: "", category: activeCarTab });
+        if (!newSpec.part.trim() || !newSpec.value.trim()) return;
+        setCarSpecs([
+            ...carSpecs,
+            {
+                id: Date.now().toString(),
+                category: activeCarTab,
+                part: newSpec.part,
+                value: newSpec.value,
+                imageUrl: newSpec.imageUrl || undefined,
+                link: newSpec.link || undefined,
+            },
+        ]);
+        setNewSpec({ part: "", value: "", imageUrl: "", link: "" });
     };
 
-    // Filtrer les specs par catégorie
-    const filteredSpecs = carSpecs.filter(spec => spec.category === activeCarTab);
+    const filteredSpecs = carSpecs.filter((spec) => spec.category === activeCarTab);
 
-    // --- RENDU VISUEL (JSX) ---
     return (
-        <div className="min-h-screen bg-black text-zinc-100 p-8 pt-20 font-pixel">
+        <PageShell>
+            <PageHeader
+                kicker="Configuration pilote & machine"
+                title="Garage"
+                sub="Ton loadout, tes pièces et ton setup sim-racing."
+                actions={
+                    <BtnLink href="/cars" variant="primary">
+                        <Gauge size={17} />
+                        Mes voitures
+                    </BtnLink>
+                }
+            />
 
-            {/* HEADER */}
-            <header className="mb-8 border-b-2 border-zinc-800 pb-4">
-                <h1 className="text-4xl font-bold italic tracking-tighter text-toxic-cyan glitch-hover">
-                    PROJECT D // GARAGE
-                </h1>
-                <p className="text-zinc-500 mt-2 font-bold tracking-widest">CONFIGURATION PILOTE & MACHINE</p>
-            </header>
-
-            {/* CARS LINK */}
-            <Link
-                href="/cars"
-                className="inline-flex items-center gap-3 bg-toxic-cyan text-black hover:bg-white px-6 py-3 font-bold transition-colors mb-8 hard-border shadow-[0_0_15px_rgba(0,255,255,0.4)]"
-            >
-                <Gauge size={20} />
-                ACCESS PARKING AREA
-            </Link>
-
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-
-                {/* SECTION 1 : DRIVER LOADOUT */}
-                <section>
-                    <div className="flex items-center gap-2 mb-6 border-b-2 border-zinc-800 pb-2">
-                        <Shirt className="text-toxic-magenta" />
-                        <h2 className="text-2xl font-bold text-white">DRIVER LOADOUT</h2>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-10">
+                {/* ===== DRIVER LOADOUT ===== */}
+                <motion.section variants={fadeUp} initial="hidden" animate="show">
+                    <div className="flex items-center gap-3 mb-5">
+                        <span className="grid place-items-center w-9 h-9 rounded-lg bg-accent/10 border border-accent/30 text-accent">
+                            <Shirt size={17} />
+                        </span>
+                        <h2 className="font-display font-bold uppercase tracking-widest text-lg text-white">
+                            Driver loadout
+                        </h2>
                     </div>
 
-                    {/* Formulaire d'ajout */}
-                    <div className="bg-zinc-950 p-4 border-2 border-zinc-800 mb-6 hard-border">
-                        <div className="grid grid-cols-2 gap-4 mb-4">
+                    {/* Add form */}
+                    <div className="glass p-4 mb-5 space-y-3">
+                        <div className="grid grid-cols-2 gap-3">
                             <input
                                 type="text"
                                 placeholder="Catégorie (ex: Haut)"
-                                className="bg-black border-2 border-zinc-700 p-2 text-sm focus:border-toxic-magenta outline-none hard-border text-white placeholder-zinc-600"
+                                className="field"
                                 value={newGear.category}
                                 onChange={(e) => setNewGear({ ...newGear, category: e.target.value })}
                             />
                             <input
                                 type="text"
                                 placeholder="Item (ex: Pull Satyn)"
-                                className="bg-black border-2 border-zinc-700 p-2 text-sm focus:border-toxic-magenta outline-none hard-border text-white placeholder-zinc-600"
+                                className="field"
                                 value={newGear.name}
                                 onChange={(e) => setNewGear({ ...newGear, name: e.target.value })}
                             />
                         </div>
-                        <button
-                            onClick={addGear}
-                            className="w-full bg-zinc-800 text-white hover:bg-toxic-magenta hover:text-black transition-colors py-2 text-sm font-bold flex items-center justify-center gap-2 hard-border"
-                        >
-                            <Plus size={16} /> AJOUTER À L'INVENTAIRE
-                        </button>
+                        <Btn onClick={addGear} variant="ghost" className="w-full" disabled={!newGear.category.trim() || !newGear.name.trim()}>
+                            <Plus size={16} /> Ajouter à l&apos;inventaire
+                        </Btn>
                     </div>
 
-                    {/* Liste des items */}
-                    <div className="space-y-2">
+                    {/* Items */}
+                    <motion.div variants={stagger} initial="hidden" animate="show" className="space-y-2">
                         {gearList.length === 0 && (
-                            <p className="text-zinc-600 text-sm font-bold bg-zinc-950 p-4 border border-zinc-800 text-center">DATA NOT FOUND...</p>
+                            <p className="glass text-zinc-600 text-sm font-semibold text-center py-6 uppercase tracking-widest">
+                                Inventaire vide
+                            </p>
                         )}
-
-                        {gearList.map((item) => (
-                            <motion.div
-                                initial={{ opacity: 0, x: -20 }}
-                                animate={{ opacity: 1, x: 0 }}
-                                key={item.id}
-                                className="flex justify-between items-center bg-zinc-950 p-3 border-l-4 border-zinc-800 hover:border-toxic-magenta transition-colors group hard-border"
-                            >
-                                <div>
-                                    <span className="text-toxic-magenta text-xs font-bold uppercase block tracking-wider">
-                                        {item.category}
-                                    </span>
-                                    <span className="text-white font-bold text-lg uppercase">
-                                        {item.name}
-                                    </span>
-                                </div>
-                                <button
-                                    onClick={() => removeGear(item.id)}
-                                    className="text-zinc-600 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                        <AnimatePresence>
+                            {gearList.map((item) => (
+                                <motion.div
+                                    key={item.id}
+                                    layout
+                                    variants={fadeUp}
+                                    exit={{ opacity: 0, x: -30, transition: { duration: 0.2 } }}
+                                    className="glass glass-hover flex justify-between items-center p-4 group"
                                 >
-                                    <Trash2 size={18} />
-                                </button>
-                            </motion.div>
+                                    <div>
+                                        <span className="label text-accent block">{item.category}</span>
+                                        <span className="font-display font-semibold text-white text-lg uppercase tracking-wide">
+                                            {item.name}
+                                        </span>
+                                    </div>
+                                    <button
+                                        onClick={() => setGearList(gearList.filter((g) => g.id !== item.id))}
+                                        className="text-zinc-700 hover:text-red-400 md:opacity-0 md:group-hover:opacity-100 transition-all p-2"
+                                        aria-label="Supprimer"
+                                    >
+                                        <Trash2 size={17} />
+                                    </button>
+                                </motion.div>
+                            ))}
+                        </AnimatePresence>
+                    </motion.div>
+                </motion.section>
+
+                {/* ===== MACHINE SPECS ===== */}
+                <motion.section variants={fadeUp} initial="hidden" animate="show" transition={{ delay: 0.08 }}>
+                    <div className="flex items-center gap-3 mb-5">
+                        <span className="grid place-items-center w-9 h-9 rounded-lg bg-ice/10 border border-ice/30 text-ice">
+                            <Car size={17} />
+                        </span>
+                        <h2 className="font-display font-bold uppercase tracking-widest text-lg text-white">
+                            Machine specs
+                        </h2>
+                    </div>
+
+                    {/* Tabs */}
+                    <div className="glass p-1.5 flex gap-1.5 mb-5">
+                        {(["REAL", "SIM-RACING"] as const).map((tab) => (
+                            <button
+                                key={tab}
+                                onClick={() => setActiveCarTab(tab)}
+                                className={`relative flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl font-display font-semibold uppercase tracking-widest text-sm transition-colors ${activeCarTab === tab ? "text-black" : "text-zinc-500 hover:text-zinc-200"
+                                    }`}
+                            >
+                                {activeCarTab === tab && (
+                                    <motion.span
+                                        layoutId="garage-tab"
+                                        className="absolute inset-0 rounded-xl bg-ice"
+                                        transition={{ type: "spring", stiffness: 400, damping: 34 }}
+                                    />
+                                )}
+                                <span className="relative flex items-center gap-2">
+                                    {tab === "REAL" ? <Car size={15} /> : <Gamepad2 size={15} />}
+                                    {tab === "REAL" ? "Réel" : "Sim-racing"}
+                                </span>
+                            </button>
                         ))}
                     </div>
-                </section>
 
-                {/* SECTION 2 : CAR SPECS */}
-                <section>
-                    <div className="flex items-center gap-2 mb-6 border-b-2 border-zinc-800 pb-2">
-                        <Car className="text-toxic-cyan" />
-                        <h2 className="text-2xl font-bold text-white">MACHINE SPECS</h2>
-                    </div>
-
-                    {/* TABS: REAL / SIM-RACING */}
-                    <div className="flex gap-2 mb-6">
-                        <button
-                            onClick={() => setActiveCarTab("REAL")}
-                            className={`flex items-center gap-2 px-6 py-2 text-sm font-bold border-2 transition-all hard-border flex-1 justify-center ${activeCarTab === "REAL"
-                                ? "bg-toxic-cyan text-black border-toxic-cyan shadow-[0_0_10px_rgba(0,255,255,0.3)]"
-                                : "bg-transparent text-zinc-500 border-zinc-800 hover:border-zinc-600"
-                                }`}
-                        >
-                            <Car size={16} /> REAL
-                        </button>
-                        <button
-                            onClick={() => setActiveCarTab("SIM-RACING")}
-                            className={`flex items-center gap-2 px-6 py-2 text-sm font-bold border-2 transition-all hard-border flex-1 justify-center ${activeCarTab === "SIM-RACING"
-                                ? "bg-toxic-cyan text-black border-toxic-cyan shadow-[0_0_10px_rgba(0,255,255,0.3)]"
-                                : "bg-transparent text-zinc-500 border-zinc-800 hover:border-zinc-600"
-                                }`}
-                        >
-                            <Gamepad2 size={16} /> SIM-RACING
-                        </button>
-                    </div>
-
-                    {/* Formulaire Auto */}
-                    <div className="bg-zinc-950 p-4 border-2 border-zinc-800 mb-6 hard-border">
-                        <div className="grid grid-cols-2 gap-4 mb-4">
+                    {/* Add form */}
+                    <div className="glass p-4 mb-5 space-y-3">
+                        <div className="grid grid-cols-2 gap-3">
                             <input
                                 type="text"
                                 placeholder="Pièce (ex: Moteur)"
-                                className="bg-black border-2 border-zinc-700 p-2 text-sm focus:border-toxic-cyan outline-none hard-border text-white placeholder-zinc-600"
+                                className="field"
                                 value={newSpec.part}
                                 onChange={(e) => setNewSpec({ ...newSpec, part: e.target.value })}
                             />
                             <input
                                 type="text"
                                 placeholder="Valeur (ex: 4A-GE)"
-                                className="bg-black border-2 border-zinc-700 p-2 text-sm focus:border-toxic-cyan outline-none hard-border text-white placeholder-zinc-600"
+                                className="field"
                                 value={newSpec.value}
                                 onChange={(e) => setNewSpec({ ...newSpec, value: e.target.value })}
                             />
                         </div>
-
-                        {/* Champs optionnels : Image & Lien */}
-                        <div className="grid grid-cols-1 gap-4 mb-4">
-                            <div className="flex items-center gap-2">
-                                <Image size={16} className="text-zinc-600 flex-shrink-0" />
-                                <input
-                                    type="text"
-                                    placeholder="URL de l'image (optionnel)"
-                                    className="bg-black border-2 border-zinc-700 p-2 text-sm focus:border-toxic-cyan outline-none hard-border text-white placeholder-zinc-600 w-full"
-                                    value={newSpec.imageUrl}
-                                    onChange={(e) => setNewSpec({ ...newSpec, imageUrl: e.target.value })}
-                                />
-                            </div>
-                            <div className="flex items-center gap-2">
-                                <Link2 size={16} className="text-zinc-600 flex-shrink-0" />
-                                <input
-                                    type="text"
-                                    placeholder="Lien externe (optionnel)"
-                                    className="bg-black border-2 border-zinc-700 p-2 text-sm focus:border-toxic-cyan outline-none hard-border text-white placeholder-zinc-600 w-full"
-                                    value={newSpec.link}
-                                    onChange={(e) => setNewSpec({ ...newSpec, link: e.target.value })}
-                                />
-                            </div>
+                        <div className="flex items-center gap-2">
+                            <ImageIcon size={15} className="text-zinc-600 shrink-0" />
+                            <input
+                                type="text"
+                                placeholder="URL de l'image (optionnel)"
+                                className="field"
+                                value={newSpec.imageUrl}
+                                onChange={(e) => setNewSpec({ ...newSpec, imageUrl: e.target.value })}
+                            />
                         </div>
-
-                        <button
-                            onClick={addSpec}
-                            className="w-full bg-zinc-800 text-white hover:bg-toxic-cyan hover:text-black transition-colors py-2 text-sm font-bold flex items-center justify-center gap-2 hard-border"
-                        >
-                            <Plus size={16} /> {activeCarTab === "SIM-RACING" ? "INSTALL SOFTWARE" : "INSTALL HARDWARE"}
-                        </button>
+                        <div className="flex items-center gap-2">
+                            <Link2 size={15} className="text-zinc-600 shrink-0" />
+                            <input
+                                type="text"
+                                placeholder="Lien externe (optionnel)"
+                                className="field"
+                                value={newSpec.link}
+                                onChange={(e) => setNewSpec({ ...newSpec, link: e.target.value })}
+                            />
+                        </div>
+                        <Btn onClick={addSpec} variant="ghost" className="w-full" disabled={!newSpec.part.trim() || !newSpec.value.trim()}>
+                            <Plus size={16} /> {activeCarTab === "SIM-RACING" ? "Installer le software" : "Installer la pièce"}
+                        </Btn>
                     </div>
 
-                    {/* Liste des Specs */}
-                    <div className="border-[1px] border-zinc-800 bg-zinc-950 hard-border p-2">
+                    {/* Specs list */}
+                    <div className="space-y-2">
                         {filteredSpecs.length === 0 && (
-                            <p className="text-zinc-600 text-sm font-bold text-center py-4">
-                                {activeCarTab === "SIM-RACING" ? "NO SOFTWARE INSTALLED..." : "NO HARDWARE INSTALLED..."}
+                            <p className="glass text-zinc-600 text-sm font-semibold text-center py-6 uppercase tracking-widest">
+                                {activeCarTab === "SIM-RACING" ? "Aucun software installé" : "Aucune pièce installée"}
                             </p>
                         )}
-                        {filteredSpecs.map((spec, index) => (
-                            <motion.div
-                                initial={{ opacity: 0, y: 10 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                key={spec.id}
-                                className={`p-4 border-b border-zinc-900 ${index % 2 === 0 ? 'bg-black' : 'bg-[#050505]'} hover:border-toxic-cyan transition-colors group`}
-                            >
-                                <div className="flex justify-between items-start gap-4">
-                                    {/* Image si présente */}
-                                    {spec.imageUrl && (
-                                        <div className="w-16 h-16 flex-shrink-0 bg-black border border-zinc-800 hard-border overflow-hidden">
-                                            <img
-                                                src={spec.imageUrl}
-                                                alt={spec.part}
-                                                className="w-full h-full object-cover opacity-80 group-hover:opacity-100 grayscale group-hover:grayscale-0 transition-all"
-                                                onError={(e) => {
-                                                    (e.target as HTMLImageElement).style.display = 'none';
-                                                }}
-                                            />
-                                        </div>
-                                    )}
-
-                                    {/* Infos */}
-                                    <div className="flex-1">
-                                        <span className="text-zinc-500 text-xs font-bold uppercase tracking-widest block">{spec.part}</span>
-                                        <span className="text-toxic-cyan font-bold text-xl uppercase">{spec.value}</span>
-
-                                        {/* Lien si présent */}
-                                        {spec.link && (
-                                            <a
-                                                href={spec.link}
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                                className="flex items-center gap-1 text-xs font-bold text-zinc-600 hover:text-toxic-cyan mt-1 transition-colors uppercase"
-                                            >
-                                                <ExternalLink size={12} />
-                                                READ DATA
-                                            </a>
+                        <AnimatePresence>
+                            {filteredSpecs.map((spec) => (
+                                <motion.div
+                                    key={spec.id}
+                                    layout
+                                    initial={{ opacity: 0, y: 12 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0, x: -30, transition: { duration: 0.2 } }}
+                                    className="glass glass-hover p-4 group"
+                                >
+                                    <div className="flex items-start gap-4">
+                                        {spec.imageUrl && (
+                                            <div className="w-14 h-14 shrink-0 rounded-lg border border-line overflow-hidden bg-black/40">
+                                                <img
+                                                    src={spec.imageUrl}
+                                                    alt={spec.part}
+                                                    className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity"
+                                                    onError={(e) => {
+                                                        (e.target as HTMLImageElement).style.display = "none";
+                                                    }}
+                                                />
+                                            </div>
                                         )}
+                                        <div className="flex-1 min-w-0">
+                                            <span className="label block">{spec.part}</span>
+                                            <span className="font-display font-bold text-ice text-lg uppercase tracking-wide break-words">
+                                                {spec.value}
+                                            </span>
+                                            {spec.link && (
+                                                <a
+                                                    href={spec.link}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="flex items-center gap-1 text-xs font-bold text-zinc-600 hover:text-ice mt-1 transition-colors uppercase tracking-widest"
+                                                >
+                                                    <ExternalLink size={11} />
+                                                    Voir
+                                                </a>
+                                            )}
+                                        </div>
+                                        <button
+                                            onClick={() => setCarSpecs(carSpecs.filter((s) => s.id !== spec.id))}
+                                            className="text-zinc-700 hover:text-red-400 transition-colors p-1"
+                                            aria-label="Supprimer"
+                                        >
+                                            <Trash2 size={15} />
+                                        </button>
                                     </div>
-
-                                    {/* Delete */}
-                                    <button
-                                        onClick={() => setCarSpecs(carSpecs.filter(s => s.id !== spec.id))}
-                                        className="text-zinc-700 hover:text-red-500 transition-colors"
-                                    >
-                                        <Trash2 size={14} />
-                                    </button>
-                                </div>
-                            </motion.div>
-                        ))}
+                                </motion.div>
+                            ))}
+                        </AnimatePresence>
                     </div>
-                </section>
-
+                </motion.section>
             </div>
-        </div>
+        </PageShell>
     );
 }
