@@ -19,7 +19,6 @@ const body = Rajdhani({
 export const metadata: Metadata = {
   title: "PROJECT D",
   description: "Night driving telemetry — garage, touge & ghost runs",
-  manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
