@@ -3,13 +3,15 @@
 import { useState, useEffect } from "react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
-import { ArrowLeft, MapPin, Clock, Mountain, Route as RouteIcon } from "lucide-react";
+import { ArrowLeft, MapPin, Clock, Mountain, Route as RouteIcon, Download } from "lucide-react";
 import { motion } from "framer-motion";
 import type { TougeCircuit } from "../types";
 import { allCircuits } from "../data";
 import { loadRoutes } from "../../lib/storage";
 import { formatDate } from "../../lib/format";
+import { downloadGPX } from "../../lib/gpx";
 import { BtnLink, DifficultyBadge } from "@/components/ui";
+import ElevationProfile from "@/components/ElevationProfile";
 
 const TougeMapView = dynamic(() => import("./TougeMapView"), {
     ssr: false,
@@ -113,6 +115,14 @@ export default function TougeDetailClient({ id }: TougeDetailClientProps) {
                                 {circuit.country}
                             </div>
                         </div>
+                        <button
+                            onClick={() => downloadGPX(circuit.name, circuit.routePoints)}
+                            className="shrink-0 grid place-items-center w-9 h-9 rounded-lg border border-line text-zinc-400 hover:text-accent hover:border-accent/50 transition-colors"
+                            aria-label="Exporter en GPX"
+                            title="Exporter en GPX"
+                        >
+                            <Download size={16} />
+                        </button>
                     </div>
                 </div>
             </motion.div>
@@ -142,6 +152,11 @@ export default function TougeDetailClient({ id }: TougeDetailClientProps) {
                     <p className="hidden md:block text-zinc-400 text-sm leading-relaxed border-t border-line pt-3">
                         {circuit.description}
                     </p>
+
+                    {/* Elevation profile (desktop only) */}
+                    <div className="hidden md:block border-t border-line pt-3">
+                        <ElevationProfile points={circuit.routePoints} />
+                    </div>
 
                     <div className="hidden md:grid grid-cols-2 gap-2.5 border-t border-line pt-3">
                         <div className="rounded-xl bg-black/30 border border-line p-3">

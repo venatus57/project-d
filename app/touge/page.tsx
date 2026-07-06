@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { MapPin, Clock, ChevronRight, Route, Eye, Plus } from "lucide-react";
+import { MapPin, Clock, ChevronRight, Route, Eye, Plus, FolderOpen } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { allCircuits } from "./data";
 import type { TougeCircuit } from "./types";
@@ -46,9 +46,14 @@ export default function TougePage() {
                 title="Touge"
                 sub="Cols légendaires du Japon, de France — et tes propres tracés."
                 actions={
-                    <BtnLink href="/conquest/builder">
-                        <Plus size={17} /> Nouveau touge
-                    </BtnLink>
+                    <>
+                        <BtnLink href="/conquest/builder">
+                            <Plus size={17} /> Nouveau touge
+                        </BtnLink>
+                        <BtnLink href="/conquest" variant="outline">
+                            <FolderOpen size={17} /> Mes tracés
+                        </BtnLink>
+                    </>
                 }
             />
 

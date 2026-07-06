@@ -73,7 +73,7 @@ const btnBase =
 
 const btnVariants: Record<BtnVariant, string> = {
     primary:
-        "bg-accent text-black border border-accent hover:bg-white hover:border-white shadow-[0_8px_30px_-8px_rgba(255,59,87,0.55)]",
+        "bg-accent text-black border border-accent hover:bg-white hover:border-white shadow-[0_8px_30px_-8px_rgba(200,245,66,0.55)]",
     outline:
         "bg-transparent text-zinc-300 border border-line hover:border-accent/60 hover:text-white",
     ghost: "bg-white/5 text-zinc-300 border border-transparent hover:bg-white/10 hover:text-white",
@@ -152,7 +152,7 @@ export type Difficulty = "EASY" | "MEDIUM" | "HARD" | "LEGENDARY";
 export const DIFFICULTY_STYLE: Record<Difficulty, { badge: string; dot: string; hex: string }> = {
     EASY: { badge: "text-mint border-mint/40 bg-mint/10", dot: "bg-mint", hex: "#3ddc84" },
     MEDIUM: { badge: "text-ice border-ice/40 bg-ice/10", dot: "bg-ice", hex: "#38e1ff" },
-    HARD: { badge: "text-accent border-accent/40 bg-accent/10", dot: "bg-accent", hex: "#ff3b57" },
+    HARD: { badge: "text-flame border-flame/40 bg-flame/10", dot: "bg-flame", hex: "#ff7a2f" },
     LEGENDARY: { badge: "text-gold border-gold/40 bg-gold/10", dot: "bg-gold", hex: "#ffc233" },
 };
 

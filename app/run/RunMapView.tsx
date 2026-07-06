@@ -4,11 +4,17 @@ import { useEffect, useRef } from "react";
 import { MapContainer, TileLayer, Polyline, CircleMarker, useMap } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import { LatLng } from "../lib/types";
+import type { Radar } from "../lib/radars";
+import type { PoliceSpot } from "../lib/spots";
+import RadarMarkers from "@/components/map/RadarMarkers";
+import SpotMarkers from "@/components/map/SpotMarkers";
 
 type RunMapViewProps = {
     tougePoints: LatLng[];
     currentPosition: LatLng | null;
     ghostPoints: LatLng[];
+    radars?: Radar[];
+    spots?: PoliceSpot[];
 };
 
 // Follow the driver as the position updates
@@ -29,7 +35,7 @@ function MapUpdater({ position }: { position: LatLng | null }) {
     return null;
 }
 
-export default function RunMapView({ tougePoints, currentPosition, ghostPoints }: RunMapViewProps) {
+export default function RunMapView({ tougePoints, currentPosition, ghostPoints, radars = [], spots = [] }: RunMapViewProps) {
     const defaultCenter: LatLng = currentPosition || tougePoints[0] || [48.8566, 2.3522];
 
     return (
@@ -40,6 +46,10 @@ export default function RunMapView({ tougePoints, currentPosition, ghostPoints }
             />
 
             <MapUpdater position={currentPosition} />
+
+            {/* Hazards */}
+            <RadarMarkers radars={radars} />
+            <SpotMarkers spots={spots} />
 
             {/* Reference touge route */}
             {tougePoints.length >= 2 && (

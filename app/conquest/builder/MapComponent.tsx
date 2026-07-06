@@ -68,11 +68,11 @@ export default function MapComponent({
                 <>
                     <Polyline
                         positions={linePoints}
-                        pathOptions={{ color: "#ff3b57", weight: 14, opacity: 0.18, lineCap: "round", lineJoin: "round" }}
+                        pathOptions={{ color: "#c8f542", weight: 14, opacity: 0.18, lineCap: "round", lineJoin: "round" }}
                     />
                     <Polyline
                         positions={linePoints}
-                        pathOptions={{ color: "#ff3b57", weight: 4, opacity: 0.95, lineCap: "round", lineJoin: "round" }}
+                        pathOptions={{ color: "#c8f542", weight: 4, opacity: 0.95, lineCap: "round", lineJoin: "round" }}
                     />
                 </>
             )}

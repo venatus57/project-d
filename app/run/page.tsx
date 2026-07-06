@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import {
-    Car as CarIcon, MapPin, Play, Square, Trophy, Satellite,
+    Car as CarIcon, MapPin, Play, Square, Trophy, Satellite, Camera, Siren,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Car, Weather, GhostRun, GhostPoint, WEATHER_INFO, STORAGE_KEYS, LatLng, UserRoute } from "../lib/types";
@@ -12,7 +12,15 @@ import { addRewards } from "../lib/profile";
 import { loadJSON, loadGhosts, saveGhosts, loadRoutes } from "../lib/storage";
 import { formatTime } from "../lib/format";
 import { distanceKm, pathDistanceKm, speedKmh } from "../lib/geo";
+import { fetchRadars, routeBBox, Radar } from "../lib/radars";
+import { loadSpots, PoliceSpot } from "../lib/spots";
 import { PageShell, PageHeader, Btn, BtnLink, fadeUp, stagger } from "@/components/ui";
+
+type HazardAlert = {
+    kind: "radar" | "police";
+    distM: number;
+    maxspeed?: string;
+};
 
 const RunMapView = dynamic(() => import("./RunMapView"), {
     ssr: false,
@@ -49,6 +57,15 @@ export default function RunPage() {
 
     const [runRewards, setRunRewards] = useState<{ ghostId: string } | null>(null);
 
+    // Hazards (fixed speed cameras + personal police spots)
+    const [radars, setRadars] = useState<Radar[]>([]);
+    const [spots, setSpots] = useState<PoliceSpot[]>([]);
+    const [hazardAlert, setHazardAlert] = useState<HazardAlert | null>(null);
+    const alertedRef = useRef<Set<string>>(new Set());
+    // Refs so the long-lived GPS callback always sees fresh data
+    const radarsRef = useRef<Radar[]>([]);
+    const spotsRef = useRef<PoliceSpot[]>([]);
+
     // Refs — GPS callbacks live outside React's render cycle, so mutable
     // values must be read from refs, never from captured state.
     const watchIdRef = useRef<number | null>(null);
@@ -63,6 +80,55 @@ export default function RunPage() {
         setCars(loadJSON<Car[]>(STORAGE_KEYS.CARS, []));
         setTouges(loadRoutes());
     }, []);
+
+    // Load hazards around the selected touge when entering the run screen
+    useEffect(() => {
+        if (!isSetupComplete || !selectedTouge) return;
+        const currentSpots = loadSpots();
+        spotsRef.current = currentSpots;
+        setSpots(currentSpots);
+
+        const bbox = routeBBox(selectedTouge.routeGeometry?.length ? selectedTouge.routeGeometry : selectedTouge.points);
+        if (bbox) {
+            fetchRadars(bbox, 200)
+                .then((r) => {
+                    radarsRef.current = r;
+                    setRadars(r);
+                })
+                .catch(() => {
+                    radarsRef.current = [];
+                    setRadars([]);
+                });
+        }
+    }, [isSetupComplete, selectedTouge]);
+
+    // Waze-style proximity check against the latest GPS fix
+    const checkHazards = (lat: number, lng: number) => {
+        let best: (HazardAlert & { key: string }) | null = null;
+
+        for (const r of radarsRef.current) {
+            const d = distanceKm([lat, lng], [r.lat, r.lng]) * 1000;
+            if (d < 600 && (!best || d < best.distM)) {
+                best = { kind: "radar", distM: d, maxspeed: r.maxspeed, key: `radar-${r.id}` };
+            }
+        }
+        for (const s of spotsRef.current) {
+            const d = distanceKm([lat, lng], [s.lat, s.lng]) * 1000;
+            if (d < 600 && (!best || d < best.distM)) {
+                best = { kind: "police", distM: d, key: `police-${s.id}` };
+            }
+        }
+
+        if (best) {
+            setHazardAlert({ kind: best.kind, distM: best.distM, maxspeed: best.maxspeed });
+            if (!alertedRef.current.has(best.key)) {
+                alertedRef.current.add(best.key);
+                navigator.vibrate?.(best.kind === "radar" ? [250, 120, 250] : [120, 80, 120, 80, 120]);
+            }
+        } else {
+            setHazardAlert(null);
+        }
+    };
 
     const stopWatchers = useCallback(() => {
         if (watchIdRef.current !== null) {
@@ -136,6 +202,7 @@ export default function RunPage() {
             setCurrentPosition([latitude, longitude]);
             setGpsAccuracy(accuracy);
             setGpsPoints(pointsRef.current);
+            checkHazards(latitude, longitude);
         };
 
         const onError = (error: GeolocationPositionError) => {
@@ -324,8 +391,46 @@ export default function RunPage() {
                     tougePoints={selectedTouge?.routeGeometry || selectedTouge?.points || []}
                     currentPosition={currentPosition}
                     ghostPoints={gpsPoints.map((p) => [p.lat, p.lng] as LatLng)}
+                    radars={radars}
+                    spots={spots}
                 />
             </div>
+
+            {/* ===== HAZARD ALERT (Waze-style) ===== */}
+            <AnimatePresence>
+                {hazardAlert && (
+                    <motion.div
+                        initial={{ y: -20, opacity: 0, scale: 0.95 }}
+                        animate={{ y: 0, opacity: 1, scale: 1 }}
+                        exit={{ y: -20, opacity: 0, scale: 0.95 }}
+                        className="absolute top-32 md:top-36 inset-x-4 z-[600] flex justify-center pointer-events-none"
+                    >
+                        <div
+                            className={`hud px-5 py-3 flex items-center gap-3 border-2! ${hazardAlert.kind === "radar"
+                                ? "border-flame!"
+                                : "border-blue-500!"
+                                }`}
+                        >
+                            {hazardAlert.kind === "radar" ? (
+                                <Camera size={22} className="text-flame animate-pulse" />
+                            ) : (
+                                <Siren size={22} className="text-blue-400 animate-pulse" />
+                            )}
+                            <div>
+                                <div
+                                    className={`font-display uppercase tracking-widest text-lg leading-none ${hazardAlert.kind === "radar" ? "text-flame" : "text-blue-400"
+                                        }`}
+                                >
+                                    {hazardAlert.kind === "radar" ? "Radar" : "Police"} — {Math.round(hazardAlert.distM / 10) * 10} m
+                                </div>
+                                {hazardAlert.maxspeed && (
+                                    <div className="label mt-0.5">Limite {hazardAlert.maxspeed} km/h</div>
+                                )}
+                            </div>
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
 
             {/* ===== TOP HUD ===== */}
             <motion.div

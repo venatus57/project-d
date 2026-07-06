@@ -5,13 +5,15 @@ import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import {
-    ArrowLeft, MapPin, Calendar, TrendingDown, TrendingUp, Navigation, Mountain, Trash2,
+    ArrowLeft, MapPin, Calendar, TrendingDown, TrendingUp, Navigation, Mountain, Trash2, Download,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { UserRoute } from "../../lib/types";
 import { loadRoutes, saveRoutes } from "../../lib/storage";
 import { formatDate } from "../../lib/format";
+import { downloadGPX } from "../../lib/gpx";
 import { BtnLink, DifficultyBadge } from "@/components/ui";
+import ElevationProfile from "@/components/ElevationProfile";
 
 const RouteMapView = dynamic(() => import("./RouteMapView"), {
     ssr: false,
@@ -114,13 +116,23 @@ export default function ConquestDetailClient({ id }: ConquestDetailClientProps) 
                             </div>
                         </div>
 
-                        <button
-                            onClick={deleteRoute}
-                            className="shrink-0 grid place-items-center w-9 h-9 rounded-lg border border-red-500/40 text-red-400 hover:bg-red-500 hover:text-black transition-colors"
-                            aria-label="Supprimer le tracé"
-                        >
-                            <Trash2 size={16} />
-                        </button>
+                        <div className="flex items-center gap-2 shrink-0">
+                            <button
+                                onClick={() => downloadGPX(route.name, displayPoints)}
+                                className="grid place-items-center w-9 h-9 rounded-lg border border-line text-zinc-400 hover:text-accent hover:border-accent/50 transition-colors"
+                                aria-label="Exporter en GPX"
+                                title="Exporter en GPX"
+                            >
+                                <Download size={16} />
+                            </button>
+                            <button
+                                onClick={deleteRoute}
+                                className="grid place-items-center w-9 h-9 rounded-lg border border-red-500/40 text-red-400 hover:bg-red-500 hover:text-black transition-colors"
+                                aria-label="Supprimer le tracé"
+                            >
+                                <Trash2 size={16} />
+                            </button>
+                        </div>
                     </div>
                 </div>
             </motion.div>
@@ -166,6 +178,11 @@ export default function ConquestDetailClient({ id }: ConquestDetailClientProps) 
                             <span className="label hidden md:inline">Difficulté</span>
                             <DifficultyBadge level={route.difficulty} />
                         </div>
+                    </div>
+
+                    {/* Elevation profile (desktop only) */}
+                    <div className="hidden md:block border-t border-line pt-3">
+                        <ElevationProfile points={displayPoints} />
                     </div>
 
                     {/* Coordinates (desktop only) */}

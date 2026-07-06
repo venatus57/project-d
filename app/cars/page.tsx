@@ -31,7 +31,7 @@ const emptyForm: Partial<Car> = {
     weight: 1000,
     drivetrain: "FR",
     mods: "STOCK",
-    color: "#ff3b57",
+    color: "#c8f542",
 };
 
 export default function CarsPage() {
@@ -178,11 +178,11 @@ export default function CarsPage() {
                                         <div className="relative h-[46px] rounded-xl border border-line overflow-hidden cursor-pointer">
                                             <input
                                                 type="color"
-                                                value={formData.color || "#ff3b57"}
+                                                value={formData.color || "#c8f542"}
                                                 onChange={(e) => setFormData({ ...formData, color: e.target.value })}
                                                 className="absolute inset-[-10px] w-[200%] h-[200%] cursor-pointer opacity-0"
                                             />
-                                            <div className="w-full h-full pointer-events-none" style={{ backgroundColor: formData.color || "#ff3b57" }} />
+                                            <div className="w-full h-full pointer-events-none" style={{ backgroundColor: formData.color || "#c8f542" }} />
                                         </div>
                                     </div>
                                 </div>
@@ -313,7 +313,7 @@ export default function CarsPage() {
                                 <div
                                     className="h-1.5"
                                     style={{
-                                        background: `linear-gradient(90deg, ${car.color || "#ff3b57"}, transparent)`,
+                                        background: `linear-gradient(90deg, ${car.color || "#c8f542"}, transparent)`,
                                     }}
                                 />
                                 <div className="p-5">

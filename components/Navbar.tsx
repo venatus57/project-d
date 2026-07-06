@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-    Home, Car, Mountain, User, Route, Trophy, Play, Menu, X, Map as MapIcon,
+    Home, Car, Mountain, User, Trophy, Play, Menu, X, Map as MapIcon,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -14,7 +14,6 @@ const navItems = [
     { href: "/touge", label: "Touge", icon: Mountain },
     { href: "/run", label: "Run", icon: Play },
     { href: "/ghosts", label: "Ghosts", icon: Trophy },
-    { href: "/conquest", label: "Conquest", icon: Route },
     { href: "/map", label: "Map", icon: MapIcon },
     { href: "/profile", label: "Profil", icon: User },
 ];
@@ -46,13 +45,13 @@ export function Navbar() {
             {/* ============ TOP BAR ============ */}
             <header className="fixed top-0 inset-x-0 z-[1100] h-14 md:h-16 border-b border-line bg-bg/75 backdrop-blur-xl">
                 <div className="mx-auto h-full max-w-7xl px-4 md:px-8 flex items-center justify-between">
-                    {/* Brand */}
-                    <Link href="/" className="flex items-center gap-2.5 group">
-                        <span className="grid place-items-center w-8 h-8 rounded-lg bg-accent/15 border border-accent/40 font-display font-bold text-accent italic group-hover:bg-accent group-hover:text-black transition-colors">
-                            D
+                    {/* Brand — JDM plate */}
+                    <Link href="/" className="flex items-center gap-3 group">
+                        <span className="plate text-base leading-none group-hover:bg-accent group-hover:text-black transition-colors">
+                            PROJECT·D
                         </span>
-                        <span className="font-display font-bold uppercase tracking-[0.25em] text-sm text-white">
-                            Project&nbsp;D
+                        <span className="hidden lg:inline text-[11px] text-zinc-600 tracking-[0.3em] uppercase">
+                            プロジェクトD
                         </span>
                     </Link>
 

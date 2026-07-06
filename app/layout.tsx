@@ -1,11 +1,11 @@
 import type { Metadata, Viewport } from "next";
-import { Chakra_Petch, Rajdhani } from "next/font/google";
+import { Bebas_Neue, Rajdhani, Permanent_Marker } from "next/font/google";
 import { Navbar } from "@/components/Navbar";
 import PageTransition from "@/components/PageTransition";
 import "./globals.css";
 
-const display = Chakra_Petch({
-  weight: ["500", "600", "700"],
+const display = Bebas_Neue({
+  weight: "400",
   variable: "--font-display",
   subsets: ["latin"],
 });
@@ -13,6 +13,12 @@ const display = Chakra_Petch({
 const body = Rajdhani({
   weight: ["400", "500", "600", "700"],
   variable: "--font-body",
+  subsets: ["latin"],
+});
+
+const tag = Permanent_Marker({
+  weight: "400",
+  variable: "--font-tag",
   subsets: ["latin"],
 });
 
@@ -30,7 +36,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#07070c",
+  themeColor: "#0a0a0f",
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
@@ -43,7 +49,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="fr" className="dark" suppressHydrationWarning>
-      <body className={`${display.variable} ${body.variable} font-body antialiased`} suppressHydrationWarning>
+      <body className={`${display.variable} ${body.variable} ${tag.variable} font-body antialiased`} suppressHydrationWarning>
         <div className="bg-fx" aria-hidden />
         <Navbar />
         <main className="app-main">

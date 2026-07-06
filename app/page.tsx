@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import {
-  Car, Mountain, User, Route, Trophy, Play, Map as MapIcon, ChevronRight, Gauge,
+  Car, Mountain, User, Trophy, Play, Map as MapIcon, ChevronRight,
 } from "lucide-react";
 import { getProfile, PlayerProfile } from "./lib/profile";
 import { loadGhosts, loadRoutes } from "./lib/storage";
@@ -15,25 +15,23 @@ type Section = {
   title: string;
   desc: string;
   icon: typeof Play;
-  tone: "accent" | "ice" | "gold" | "mint" | "haze";
-  big?: boolean;
+  tone: "accent" | "ice" | "gold" | "mint" | "haze" | "flame";
 };
 
 const sections: Section[] = [
   {
     href: "/run",
     title: "Run",
-    desc: "Lance un run GPS chronométré et enregistre ton ghost.",
+    desc: "Chrono GPS en direct, alerte radar et ghost à la clé.",
     icon: Play,
     tone: "accent",
-    big: true,
   },
   {
     href: "/touge",
     title: "Touge",
-    desc: "Cols légendaires et tracés personnels.",
+    desc: "Cols légendaires et tracés maison.",
     icon: Mountain,
-    tone: "ice",
+    tone: "flame",
   },
   {
     href: "/ghosts",
@@ -50,16 +48,9 @@ const sections: Section[] = [
     tone: "mint",
   },
   {
-    href: "/conquest",
-    title: "Conquest",
-    desc: "Construis tes propres circuits.",
-    icon: Route,
-    tone: "haze",
-  },
-  {
     href: "/map",
     title: "Map",
-    desc: "Toutes les routes sur la carte.",
+    desc: "Toutes les routes + radars fixes.",
     icon: MapIcon,
     tone: "ice",
   },
@@ -68,17 +59,27 @@ const sections: Section[] = [
     title: "Profil",
     desc: "Stats, battles et sauvegarde.",
     icon: User,
-    tone: "accent",
+    tone: "haze",
   },
 ];
 
 const toneStyles: Record<string, { icon: string; hoverBorder: string; glow: string }> = {
-  accent: { icon: "text-accent bg-accent/10 border-accent/30", hoverBorder: "hover:border-accent/50", glow: "rgba(255,59,87,0.25)" },
+  accent: { icon: "text-accent bg-accent/10 border-accent/30", hoverBorder: "hover:border-accent/50", glow: "rgba(200,245,66,0.2)" },
+  flame: { icon: "text-flame bg-flame/10 border-flame/30", hoverBorder: "hover:border-flame/50", glow: "rgba(255,122,47,0.2)" },
   ice: { icon: "text-ice bg-ice/10 border-ice/30", hoverBorder: "hover:border-ice/50", glow: "rgba(56,225,255,0.2)" },
   gold: { icon: "text-gold bg-gold/10 border-gold/30", hoverBorder: "hover:border-gold/50", glow: "rgba(255,194,51,0.2)" },
   mint: { icon: "text-mint bg-mint/10 border-mint/30", hoverBorder: "hover:border-mint/50", glow: "rgba(61,220,132,0.2)" },
   haze: { icon: "text-haze bg-haze/10 border-haze/30", hoverBorder: "hover:border-haze/50", glow: "rgba(167,139,250,0.2)" },
 };
+
+const tickerItems = [
+  ["Rasso ce soir", "23:00 · parking niveau -2"],
+  ["峠バトル", "Touge battle"],
+  ["Respect le spot", "On laisse propre"],
+  ["Underglow obligatoire", "Volt ou violet"],
+  ["Radar fixe repéré", "Check la map"],
+  ["No grip", "No fun"],
+];
 
 export default function Home() {
   const [profile, setProfile] = useState<PlayerProfile | null>(null);
@@ -91,30 +92,48 @@ export default function Home() {
     setRouteCount(loadRoutes().length);
   }, []);
 
+  const tickerContent = (
+    <>
+      {tickerItems.map(([head, tail], i) => (
+        <span key={i}>
+          <b>{head}</b> — {tail} ▸
+        </span>
+      ))}
+    </>
+  );
+
   return (
-    <div className="mx-auto w-full max-w-6xl px-4 md:px-8 py-8 md:py-14">
+    <div className="mx-auto w-full max-w-6xl px-4 md:px-8 py-8 md:py-12">
       {/* ===== HERO ===== */}
       <motion.header
         variants={stagger}
         initial="hidden"
         animate="show"
-        className="text-center mb-10 md:mb-14"
+        className="text-center mb-6 md:mb-8"
       >
         <motion.div variants={fadeUp} className="kicker text-accent mb-4 flex items-center justify-center gap-3">
           <span className="inline-block w-8 h-px bg-accent" />
-          Night driving telemetry
+          Street meet · Night runs
           <span className="inline-block w-8 h-px bg-accent" />
         </motion.div>
-        <motion.h1
-          variants={fadeUp}
-          className="title-xl text-5xl md:text-8xl italic text-shimmer"
-        >
-          Project&nbsp;D
+        <motion.h1 variants={fadeUp} className="title-xl text-6xl md:text-9xl">
+          <span className="lean text-shimmer">Project&nbsp;D</span>
         </motion.h1>
-        <motion.p variants={fadeUp} className="text-zinc-500 font-medium mt-4 text-lg">
-          Garage · Touge · Ghost runs
+        <motion.p variants={fadeUp} className="mt-3 text-zinc-500 tracking-[0.4em] uppercase text-xs md:text-sm">
+          プロジェクトD — 峠バトル
+        </motion.p>
+        <motion.p variants={fadeUp} className="tag-note text-lg md:text-xl mt-3">
+          vu au rasso, validé par le crew
         </motion.p>
       </motion.header>
+
+      {/* ===== TICKER ===== */}
+      <motion.div variants={fadeUp} initial="hidden" animate="show" className="ticker mb-8 md:mb-10 -mx-4 md:mx-0">
+        <div className="ticker-track" aria-hidden>
+          {tickerContent}
+          {tickerContent}
+        </div>
+      </motion.div>
 
       {/* ===== DRIVER HUD ===== */}
       <motion.section
@@ -130,24 +149,24 @@ export default function Home() {
             </div>
             <div>
               <div className="label">Pilote</div>
-              <div className="font-display font-bold text-xl text-white uppercase tracking-wider truncate max-w-[10rem]">
+              <div className="font-display text-2xl text-white uppercase tracking-wider truncate max-w-[10rem]">
                 {profile?.driverName || "Anonyme"}
               </div>
             </div>
           </div>
           <div className="text-center md:border-l border-line">
-            <div className="mono-num text-2xl md:text-3xl font-bold text-mint">
+            <div className="mono-num text-2xl md:text-3xl text-mint">
               {profile ? profile.totalDistance.toFixed(1) : "0.0"}
               <span className="text-sm text-zinc-500 ml-1">km</span>
             </div>
             <div className="label mt-1">Odomètre</div>
           </div>
           <div className="text-center md:border-l border-line">
-            <div className="mono-num text-2xl md:text-3xl font-bold text-gold">{ghostCount}</div>
+            <div className="mono-num text-2xl md:text-3xl text-gold">{ghostCount}</div>
             <div className="label mt-1">Ghosts</div>
           </div>
           <div className="text-center md:border-l border-line">
-            <div className="mono-num text-2xl md:text-3xl font-bold text-ice">{routeCount}</div>
+            <div className="mono-num text-2xl md:text-3xl text-ice">{routeCount}</div>
             <div className="label mt-1">Tracés</div>
           </div>
         </div>
@@ -169,12 +188,10 @@ export default function Home() {
               variants={fadeUp}
               whileHover={{ y: -4 }}
               whileTap={{ scale: 0.98 }}
-              className={s.big ? "sm:col-span-2 lg:col-span-1" : ""}
             >
               <Link
                 href={s.href}
                 className={`group glass glass-hover ${t.hoverBorder} flex flex-col h-full p-6 relative overflow-hidden`}
-                style={{ ["--glow" as string]: t.glow }}
               >
                 <div
                   className="absolute -top-16 -right-16 w-40 h-40 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-500 blur-3xl"
@@ -189,7 +206,7 @@ export default function Home() {
                     className="text-zinc-700 group-hover:text-white group-hover:translate-x-1 transition-all"
                   />
                 </div>
-                <h2 className="font-display font-bold uppercase tracking-widest text-xl text-white mb-1 relative">
+                <h2 className="font-display uppercase tracking-[0.15em] text-2xl text-white mb-1 relative">
                   {s.title}
                 </h2>
                 <p className="text-zinc-500 text-sm font-medium relative">{s.desc}</p>
@@ -206,9 +223,8 @@ export default function Home() {
         animate="show"
         className="mt-12 md:mt-16 flex items-center justify-center gap-3 text-zinc-600"
       >
-        <span className="w-2 h-2 rounded-full bg-mint pulse-dot shadow-[0_0_10px_rgba(61,220,132,0.8)]" />
-        <span className="label">System v4.0 — Online</span>
-        <Gauge size={13} />
+        <span className="w-2 h-2 rounded-full bg-accent pulse-dot shadow-[0_0_10px_rgba(200,245,66,0.8)]" />
+        <span className="label">Underground network — Online</span>
       </motion.footer>
     </div>
   );
