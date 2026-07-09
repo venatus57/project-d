@@ -19,11 +19,11 @@ export default function Icon() {
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    backgroundColor: '#0a0a0f',
-                    color: '#c8f542',
+                    backgroundColor: '#0a0b0d',
+                    color: '#d84fc4',
                     fontSize: 320,
                     fontWeight: '900',
-                    border: '24px solid #c8f542',
+                    border: '24px solid #d84fc4',
                 }}
             >
                 <div style={{ transform: 'skewX(-15deg)' }}>D</div>

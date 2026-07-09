@@ -293,7 +293,7 @@ export default function RunPage() {
                                         key={car.id}
                                         onClick={() => setSelectedCar(car)}
                                         className={`p-4 rounded-xl border text-left transition-all active:scale-[0.98] ${selectedCar?.id === car.id
-                                            ? "bg-accent/12 border-accent/60 shadow-[0_0_24px_-8px_rgba(255,59,87,0.5)]"
+                                            ? "bg-accent/12 border-accent/60 shadow-[0_0_24px_-8px_rgba(216,79,196,0.5)]"
                                             : "bg-black/25 border-line hover:border-white/25"
                                             }`}
                                     >

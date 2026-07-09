@@ -64,21 +64,21 @@ const sections: Section[] = [
 ];
 
 const toneStyles: Record<string, { icon: string; hoverBorder: string; glow: string }> = {
-  accent: { icon: "text-accent bg-accent/10 border-accent/30", hoverBorder: "hover:border-accent/50", glow: "rgba(200,245,66,0.2)" },
-  flame: { icon: "text-flame bg-flame/10 border-flame/30", hoverBorder: "hover:border-flame/50", glow: "rgba(255,122,47,0.2)" },
-  ice: { icon: "text-ice bg-ice/10 border-ice/30", hoverBorder: "hover:border-ice/50", glow: "rgba(56,225,255,0.2)" },
-  gold: { icon: "text-gold bg-gold/10 border-gold/30", hoverBorder: "hover:border-gold/50", glow: "rgba(255,194,51,0.2)" },
-  mint: { icon: "text-mint bg-mint/10 border-mint/30", hoverBorder: "hover:border-mint/50", glow: "rgba(61,220,132,0.2)" },
-  haze: { icon: "text-haze bg-haze/10 border-haze/30", hoverBorder: "hover:border-haze/50", glow: "rgba(167,139,250,0.2)" },
+  accent: { icon: "text-accent bg-accent/10 border-accent/30", hoverBorder: "hover:border-accent/50", glow: "rgba(216,79,196,0.18)" },
+  flame: { icon: "text-flame bg-flame/10 border-flame/30", hoverBorder: "hover:border-flame/50", glow: "rgba(244,86,74,0.16)" },
+  ice: { icon: "text-ice bg-ice/10 border-ice/30", hoverBorder: "hover:border-ice/50", glow: "rgba(111,214,234,0.15)" },
+  gold: { icon: "text-gold bg-gold/10 border-gold/30", hoverBorder: "hover:border-gold/50", glow: "rgba(240,164,60,0.16)" },
+  mint: { icon: "text-mint bg-mint/10 border-mint/30", hoverBorder: "hover:border-mint/50", glow: "rgba(70,201,140,0.15)" },
+  haze: { icon: "text-haze bg-haze/10 border-haze/30", hoverBorder: "hover:border-haze/50", glow: "rgba(167,139,250,0.16)" },
 };
 
 const tickerItems = [
-  ["Rasso ce soir", "23:00 · parking niveau -2"],
-  ["峠バトル", "Touge battle"],
-  ["Respect le spot", "On laisse propre"],
-  ["Underglow obligatoire", "Volt ou violet"],
-  ["Radar fixe repéré", "Check la map"],
-  ["No grip", "No fun"],
+  ["Parking B2", "12 caisses posées"],
+  ["C1 intérieure", "trafic fluide"],
+  ["R34 violette", "aperçue sortie 7"],
+  ["峠", "brouillard au sommet"],
+  ["Tunnel", "néons HS depuis 2003"],
+  ["Bip radio", "on se replie"],
 ];
 
 export default function Home() {
@@ -111,19 +111,19 @@ export default function Home() {
         animate="show"
         className="text-center mb-6 md:mb-8"
       >
-        <motion.div variants={fadeUp} className="kicker text-accent mb-4 flex items-center justify-center gap-3">
-          <span className="inline-block w-8 h-px bg-accent" />
-          Street meet · Night runs
-          <span className="inline-block w-8 h-px bg-accent" />
+        <motion.div variants={fadeUp} className="kicker text-gold mb-4 flex items-center justify-center gap-3">
+          <span className="inline-block w-8 h-px bg-gold/60" />
+          Parking area B2 — 2:47 AM
+          <span className="inline-block w-8 h-px bg-gold/60" />
         </motion.div>
         <motion.h1 variants={fadeUp} className="title-xl text-6xl md:text-9xl">
-          <span className="lean text-shimmer">Project&nbsp;D</span>
+          <span className="lean headlight">Project&nbsp;D</span>
         </motion.h1>
         <motion.p variants={fadeUp} className="mt-3 text-zinc-500 tracking-[0.4em] uppercase text-xs md:text-sm">
-          プロジェクトD — 峠バトル
+          プロジェクトD — 首都高バトル
         </motion.p>
-        <motion.p variants={fadeUp} className="tag-note text-lg md:text-xl mt-3">
-          vu au rasso, validé par le crew
+        <motion.p variants={fadeUp} className="mt-3 text-accent/80 font-display font-medium tracking-[0.3em] uppercase text-sm">
+          Moteur coupé, phares éteints. On attend.
         </motion.p>
       </motion.header>
 
@@ -223,8 +223,8 @@ export default function Home() {
         animate="show"
         className="mt-12 md:mt-16 flex items-center justify-center gap-3 text-zinc-600"
       >
-        <span className="w-2 h-2 rounded-full bg-accent pulse-dot shadow-[0_0_10px_rgba(200,245,66,0.8)]" />
-        <span className="label">Underground network — Online</span>
+        <span className="w-2 h-2 rounded-full bg-accent pulse-dot shadow-[0_0_10px_rgba(216,79,196,0.8)]" />
+        <span className="label">Shutoko network — Online</span>
       </motion.footer>
     </div>
   );

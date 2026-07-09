@@ -219,7 +219,7 @@ export default function ProfilePage() {
                 <motion.div variants={stagger} initial="hidden" animate="show" className="space-y-5">
                     <motion.div variants={fadeUp} className="glass edge-accent p-6">
                         <div className="flex items-center gap-4 mb-6">
-                            <div className="grid place-items-center w-16 h-16 rounded-2xl bg-accent/10 border border-accent/40 text-3xl shadow-[0_0_24px_-8px_rgba(255,59,87,0.5)]">
+                            <div className="grid place-items-center w-16 h-16 rounded-2xl bg-accent/10 border border-accent/40 text-3xl shadow-[0_0_24px_-8px_rgba(216,79,196,0.5)]">
                                 {profile?.avatar || "🏎️"}
                             </div>
                             <div className="min-w-0 flex-1">

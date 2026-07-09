@@ -33,7 +33,7 @@ function RoutePreview({ route }: { route: UserRoute }) {
         })
         .join(" ");
 
-    const color = DIFFICULTY_STYLE[route.difficulty]?.hex || "#c8f542";
+    const color = DIFFICULTY_STYLE[route.difficulty]?.hex || "#d84fc4";
 
     return (
         <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-full" preserveAspectRatio="xMidYMid meet">

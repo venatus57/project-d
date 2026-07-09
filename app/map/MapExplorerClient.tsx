@@ -193,7 +193,7 @@ export default function MapExplorerClient() {
                         route.routeGeometry && route.routeGeometry.length > 0 ? route.routeGeometry : route.points;
                     if (!displayPoints || displayPoints.length === 0) return null;
 
-                    const color = DIFFICULTY_STYLE[route.difficulty]?.hex || "#c8f542";
+                    const color = DIFFICULTY_STYLE[route.difficulty]?.hex || "#d84fc4";
 
                     return (
                         <Fragment key={`${route.isOfficial ? "off" : "usr"}-${route.id}`}>

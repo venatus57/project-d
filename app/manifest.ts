@@ -11,8 +11,8 @@ export default function manifest(): MetadataRoute.Manifest {
         description: "Street Racing GPS Tracker & Telemetry Dashboard",
         start_url: `${basePath}/`,
         display: "standalone",
-        background_color: "#0a0a0f",
-        theme_color: "#c8f542",
+        background_color: "#0a0b0d",
+        theme_color: "#d84fc4",
         orientation: "portrait",
         icons: [
             {

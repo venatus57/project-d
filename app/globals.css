@@ -5,30 +5,29 @@
    ============================================================ */
 
 @theme {
-    /* Palette — underground parking lot at 2AM */
-    --color-bg: #0a0a0f;
-    --color-surface: #101018;
-    --color-raised: #171722;
-    --color-line: rgba(255, 255, 255, 0.08);
+    /* Palette — Shutoko 2:47 AM, PS2 era */
+    --color-bg: #0a0b0d;
+    --color-surface: #0f1114;
+    --color-raised: #15181c;
+    --color-line: rgba(255, 255, 255, 0.07);
 
-    --color-accent: #c8f542;
-    /* volt / underglow lime */
-    --color-flame: #ff7a2f;
-    /* sodium orange */
-    --color-ice: #38e1ff;
-    /* telemetry cyan */
-    --color-gold: #ffc233;
-    /* record gold */
-    --color-mint: #3ddc84;
-    /* gps green */
+    --color-accent: #d84fc4;
+    /* wangan magenta (la R34) */
+    --color-flame: #f4564a;
+    /* feux stop */
+    --color-ice: #6fd6ea;
+    /* néon tunnel */
+    --color-gold: #f0a43c;
+    /* lampadaire sodium */
+    --color-mint: #46c98c;
+    /* gps */
     --color-haze: #a78bfa;
-    /* underglow violet */
+    /* midnight purple */
 }
 
 @theme inline {
-    --font-display: var(--font-display), "Bebas Neue", sans-serif;
+    --font-display: var(--font-display), "Saira Condensed", sans-serif;
     --font-body: var(--font-body), "Rajdhani", sans-serif;
-    --font-tag: var(--font-tag), "Permanent Marker", cursive;
 }
 
 :root {
@@ -57,35 +56,38 @@ body {
     -webkit-tap-highlight-color: transparent;
 }
 
-/* Fixed atmospheric background: sodium streetlight + underglow + asphalt grain */
+/* Fixed atmospheric background: sodium lamp, tunnel magenta, parking floor */
 .bg-fx {
     position: fixed;
     inset: 0;
     z-index: -1;
     pointer-events: none;
     background:
-        radial-gradient(120% 55% at 50% -10%, rgba(255, 176, 32, 0.10), transparent 60%),
-        radial-gradient(90% 55% at 12% 110%, rgba(167, 139, 250, 0.12), transparent 60%),
-        radial-gradient(70% 45% at 92% 108%, rgba(200, 245, 66, 0.08), transparent 60%),
+        radial-gradient(45% 30% at 22% -6%, rgba(240, 164, 60, 0.13), transparent 65%),
+        radial-gradient(60% 40% at 88% 108%, rgba(216, 79, 196, 0.07), transparent 60%),
+        linear-gradient(180deg, transparent 55%, rgba(96, 128, 104, 0.045)),
         var(--color-bg);
 }
 
-/* Asphalt grain */
+/* Film grain (PS2 / VHS) */
 .bg-fx::before {
     content: "";
     position: absolute;
     inset: 0;
     background-image:
-        radial-gradient(circle at 25% 25%, rgba(255, 255, 255, 0.035) 1px, transparent 1.4px),
-        radial-gradient(circle at 75% 65%, rgba(255, 255, 255, 0.02) 1px, transparent 1.4px);
-    background-size: 5px 5px, 9px 9px;
+        radial-gradient(circle at 25% 25%, rgba(255, 255, 255, 0.045) 1px, transparent 1.3px),
+        radial-gradient(circle at 65% 75%, rgba(255, 255, 255, 0.025) 1px, transparent 1.5px),
+        radial-gradient(circle at 85% 35%, rgba(0, 0, 0, 0.25) 1px, transparent 1.5px);
+    background-size: 4px 4px, 7px 7px, 11px 11px;
+    opacity: 0.9;
 }
 
+/* Heavy cinematic vignette */
 .bg-fx::after {
     content: "";
     position: absolute;
     inset: 0;
-    background: radial-gradient(120% 120% at 50% 50%, transparent 52%, rgba(0, 0, 0, 0.55));
+    background: radial-gradient(115% 115% at 50% 45%, transparent 42%, rgba(0, 0, 0, 0.72));
 }
 
 /* Main content area (below fixed navs) */
@@ -112,36 +114,35 @@ body {
 
 .title-xl {
     font-family: var(--font-display);
-    font-weight: 400;
+    font-weight: 600;
     text-transform: uppercase;
-    letter-spacing: 0.05em;
+    letter-spacing: 0.08em;
     line-height: 0.95;
 }
 
 /* Speed lean for hero titles */
 .lean {
     display: inline-block;
-    transform: skewX(-8deg);
+    transform: skewX(-6deg);
 }
 
-/* Graffiti tag accent */
-.tag-note {
-    font-family: var(--font-tag);
-    color: var(--color-accent);
-    transform: rotate(-2.5deg);
-    display: inline-block;
+/* Headlight glow on hero text */
+.headlight {
+    color: #f2f0e8;
+    text-shadow: 0 0 30px rgba(242, 240, 232, 0.35), 0 0 90px rgba(216, 79, 196, 0.25);
 }
 
 /* JDM plate badge */
 .plate {
     font-family: var(--font-display);
-    letter-spacing: 0.18em;
-    background: #0c0c0c;
-    border: 2px solid var(--color-accent);
-    border-radius: 6px;
-    padding: 3px 12px 1px;
+    font-weight: 600;
+    letter-spacing: 0.2em;
+    background: #0b0b0d;
+    border: 1px solid rgba(216, 79, 196, 0.55);
+    border-radius: 5px;
+    padding: 3px 12px;
     color: var(--color-accent);
-    box-shadow: 0 0 18px -6px rgba(200, 245, 66, 0.6), inset 0 0 8px rgba(200, 245, 66, 0.08);
+    box-shadow: 0 0 16px -6px rgba(216, 79, 196, 0.55), inset 0 0 10px rgba(216, 79, 196, 0.07);
 }
 
 .kicker {
@@ -182,9 +183,9 @@ body {
 }
 
 .glass-hover:hover {
-    border-color: rgba(200, 245, 66, 0.45);
+    border-color: rgba(216, 79, 196, 0.45);
     transform: translateY(-2px);
-    box-shadow: 0 12px 40px -12px rgba(200, 245, 66, 0.22);
+    box-shadow: 0 12px 40px -12px rgba(216, 79, 196, 0.25);
 }
 
 .hud {
@@ -276,16 +277,17 @@ body {
 
 .ticker-track>span {
     font-family: var(--font-display);
-    letter-spacing: 0.25em;
+    font-weight: 500;
+    letter-spacing: 0.28em;
     text-transform: uppercase;
-    font-size: 0.85rem;
-    color: #6b6b7d;
-    padding-right: 2.5rem;
+    font-size: 0.8rem;
+    color: #565660;
+    padding-right: 3rem;
 }
 
 .ticker-track>span b {
-    color: var(--color-accent);
-    font-weight: 400;
+    color: var(--color-gold);
+    font-weight: 500;
 }
 
 /* Radar map pin (French speed-sign style) */
@@ -393,7 +395,7 @@ body {
 }
 
 ::-webkit-scrollbar-thumb:hover {
-    background: rgba(200, 245, 66, 0.55);
+    background: rgba(216, 79, 196, 0.55);
 }
 
 /* ============================================================
@@ -460,8 +462,8 @@ body {
 }
 
 .field:focus {
-    border-color: rgba(200, 245, 66, 0.6);
-    box-shadow: 0 0 0 3px rgba(200, 245, 66, 0.12);
+    border-color: rgba(216, 79, 196, 0.6);
+    box-shadow: 0 0 0 3px rgba(216, 79, 196, 0.12);
 }
 
 select.field option {

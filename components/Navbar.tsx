@@ -159,7 +159,7 @@ export function Navbar() {
                                 {isRun ? (
                                     <span
                                         className={`grid place-items-center w-12 h-12 -mt-5 rounded-2xl border transition-all ${active
-                                            ? "bg-accent text-black border-accent shadow-[0_0_24px_rgba(255,59,87,0.5)]"
+                                            ? "bg-accent text-black border-accent shadow-[0_0_24px_rgba(216,79,196,0.5)]"
                                             : "bg-raised text-accent border-accent/40 shadow-[0_8px_24px_-8px_rgba(0,0,0,0.8)]"
                                             }`}
                                     >
@@ -170,7 +170,7 @@ export function Navbar() {
                                         {active && (
                                             <motion.span
                                                 layoutId="tab-dot"
-                                                className="absolute top-1.5 w-1 h-1 rounded-full bg-accent shadow-[0_0_8px_rgba(255,59,87,0.9)]"
+                                                className="absolute top-1.5 w-1 h-1 rounded-full bg-accent shadow-[0_0_8px_rgba(216,79,196,0.9)]"
                                             />
                                         )}
                                         <Icon size={20} className={active ? "text-white" : "text-zinc-500"} />

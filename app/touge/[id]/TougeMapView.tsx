@@ -39,11 +39,11 @@ export default function TougeMapView({ routePoints }: TougeMapViewProps) {
                 <>
                     <Polyline
                         positions={routePoints}
-                        pathOptions={{ color: "#c8f542", weight: 18, opacity: 0.12, lineCap: "round", lineJoin: "round" }}
+                        pathOptions={{ color: "#d84fc4", weight: 18, opacity: 0.12, lineCap: "round", lineJoin: "round" }}
                     />
                     <Polyline
                         positions={routePoints}
-                        pathOptions={{ color: "#c8f542", weight: 5, opacity: 0.95, lineCap: "round", lineJoin: "round" }}
+                        pathOptions={{ color: "#d84fc4", weight: 5, opacity: 0.95, lineCap: "round", lineJoin: "round" }}
                     />
                 </>
             )}

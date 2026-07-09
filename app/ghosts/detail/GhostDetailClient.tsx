@@ -237,7 +237,7 @@ export default function GhostDetailClient({ id }: GhostDetailClientProps) {
                             </button>
                             <button
                                 onClick={togglePlay}
-                                className="grid place-items-center w-14 h-12 rounded-xl bg-accent text-black hover:bg-white transition-colors active:scale-95 shadow-[0_8px_28px_-8px_rgba(255,59,87,0.6)]"
+                                className="grid place-items-center w-14 h-12 rounded-xl bg-accent text-black hover:bg-white transition-colors active:scale-95 shadow-[0_8px_28px_-8px_rgba(216,79,196,0.6)]"
                                 aria-label={isPlaying ? "Pause" : "Lecture"}
                             >
                                 {isPlaying ? <Pause size={22} fill="currentColor" /> : <Play size={22} fill="currentColor" />}
