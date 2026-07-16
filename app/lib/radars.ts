@@ -22,25 +22,44 @@ type OverpassElement = {
     tags?: { maxspeed?: string };
 };
 
+// Public Overpass instances — tried in order (the main one gets rate-limited)
+const OVERPASS_ENDPOINTS = [
+    "https://overpass-api.de/api/interpreter",
+    "https://overpass.kumi.systems/api/interpreter",
+    "https://overpass.private.coffee/api/interpreter",
+];
+
 export async function fetchRadars(b: BBox, limit = 400): Promise<Radar[]> {
-    const query = `[out:json][timeout:25];node["highway"="speed_camera"](${b.south},${b.west},${b.north},${b.east});out body ${limit};`;
+    const query = `[out:json][timeout:20];node["highway"="speed_camera"](${b.south},${b.west},${b.north},${b.east});out body ${limit};`;
 
-    const res = await fetch("https://overpass-api.de/api/interpreter", {
-        method: "POST",
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body: "data=" + encodeURIComponent(query),
-    });
-    if (!res.ok) throw new Error(`Overpass ${res.status}`);
-
-    const data = await res.json();
-    return ((data.elements || []) as OverpassElement[])
-        .filter((e) => Number.isFinite(e.lat) && Number.isFinite(e.lon))
-        .map((e) => ({
-            id: e.id,
-            lat: e.lat,
-            lng: e.lon,
-            maxspeed: e.tags?.maxspeed,
-        }));
+    let lastError: unknown = new Error("Overpass indisponible");
+    for (const endpoint of OVERPASS_ENDPOINTS) {
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), 12_000);
+        try {
+            const res = await fetch(endpoint, {
+                method: "POST",
+                headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                body: "data=" + encodeURIComponent(query),
+                signal: controller.signal,
+            });
+            if (!res.ok) throw new Error(`Overpass ${res.status}`);
+            const data = await res.json();
+            return ((data.elements || []) as OverpassElement[])
+                .filter((e) => Number.isFinite(e.lat) && Number.isFinite(e.lon))
+                .map((e) => ({
+                    id: e.id,
+                    lat: e.lat,
+                    lng: e.lon,
+                    maxspeed: e.tags?.maxspeed,
+                }));
+        } catch (e) {
+            lastError = e;
+        } finally {
+            clearTimeout(timer);
+        }
+    }
+    throw lastError;
 }
 
 /** BBox around a route with a margin (in degrees, ~0.03° ≈ 3 km). */

@@ -20,7 +20,7 @@ type ExplorerRoute = UserRoute & { isOfficial?: boolean };
 
 type RadarStatus = "idle" | "loading" | "zoom" | "error";
 
-const RADAR_MIN_ZOOM = 9;
+const RADAR_MIN_ZOOM = 8;
 
 function LocationManager({ center, zoom }: { center: LatLng; zoom: number }) {
     const map = useMap();
@@ -30,22 +30,31 @@ function LocationManager({ center, zoom }: { center: LatLng; zoom: number }) {
     return null;
 }
 
-// Loads fixed speed cameras (OpenStreetMap) for the visible area
+// Loads fixed speed cameras (OpenStreetMap) for the visible area.
+// NB: react-leaflet event handlers capture their first render — every mutable
+// value must go through a ref, never through props read directly in `load`.
 function RadarLayer({
     enabled,
+    reloadKey,
     onRadars,
     onStatus,
 }: {
     enabled: boolean;
+    reloadKey: number;
     onRadars: (r: Radar[]) => void;
     onStatus: (s: RadarStatus) => void;
 }) {
     const map = useMap();
+    const enabledRef = useRef(enabled);
     const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const requestIdRef = useRef(0);
 
+    useEffect(() => {
+        enabledRef.current = enabled;
+    }, [enabled]);
+
     const load = () => {
-        if (!enabled) return;
+        if (!enabledRef.current) return;
         if (map.getZoom() < RADAR_MIN_ZOOM) {
             onRadars([]);
             onStatus("zoom");
@@ -79,12 +88,23 @@ function RadarLayer({
     });
 
     useEffect(() => {
-        if (enabled) load();
-        else {
+        if (enabled) {
+            // Too far out? Center on the user first — the flyTo triggers moveend → load.
+            if (map.getZoom() < RADAR_MIN_ZOOM && navigator.geolocation) {
+                onStatus("loading");
+                navigator.geolocation.getCurrentPosition(
+                    (pos) => map.flyTo([pos.coords.latitude, pos.coords.longitude], 12, { duration: 1.2 }),
+                    () => load(),
+                    { enableHighAccuracy: false, timeout: 6000, maximumAge: 60_000 }
+                );
+            } else {
+                load();
+            }
+        } else {
             onRadars([]);
             onStatus("idle");
         }
-    }, [enabled]);
+    }, [enabled, reloadKey]);
 
     return null;
 }
@@ -110,6 +130,7 @@ export default function MapExplorerClient() {
     const [showRadars, setShowRadars] = useState(false);
     const [radars, setRadars] = useState<Radar[]>([]);
     const [radarStatus, setRadarStatus] = useState<RadarStatus>("idle");
+    const [radarReloadKey, setRadarReloadKey] = useState(0);
 
     // Police spots
     const [spots, setSpots] = useState<PoliceSpot[]>([]);
@@ -154,9 +175,19 @@ export default function MapExplorerClient() {
     const radarButtonLabel = () => {
         if (!showRadars) return "Radars off";
         if (radarStatus === "loading") return "Scan…";
-        if (radarStatus === "zoom") return "Zoome +";
-        if (radarStatus === "error") return "Erreur réseau";
+        if (radarStatus === "zoom") return "Zoome sur ta zone";
+        if (radarStatus === "error") return "Erreur — réessayer";
         return `${radars.length} radar${radars.length > 1 ? "s" : ""}`;
+    };
+
+    const handleRadarButton = () => {
+        if (!showRadars) {
+            setShowRadars(true);
+        } else if (radarStatus === "error" || radarStatus === "zoom") {
+            setRadarReloadKey((k) => k + 1); // retry without toggling off
+        } else {
+            setShowRadars(false);
+        }
     };
 
     return (
@@ -168,7 +199,7 @@ export default function MapExplorerClient() {
                 />
 
                 <LocationManager center={mapCenter} zoom={mapZoom} />
-                <RadarLayer enabled={showRadars} onRadars={setRadars} onStatus={setRadarStatus} />
+                <RadarLayer enabled={showRadars} reloadKey={radarReloadKey} onRadars={setRadars} onStatus={setRadarStatus} />
                 <ReportHandler active={reportMode} onReport={(ll) => setPendingSpot(ll)} />
 
                 {/* User GPS marker */}
@@ -267,7 +298,7 @@ export default function MapExplorerClient() {
             {/* Layer toggles */}
             <div className="absolute top-3 right-3 z-[500] flex flex-col gap-2 items-end">
                 <button
-                    onClick={() => setShowRadars((v) => !v)}
+                    onClick={handleRadarButton}
                     className={`hud rounded-xl! px-3.5 py-2.5 flex items-center gap-2 transition-colors text-xs font-display uppercase tracking-widest ${showRadars ? "text-black bg-white! border-white!" : "text-zinc-300 hover:text-white"
                         }`}
                 >
