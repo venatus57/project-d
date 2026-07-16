@@ -4,8 +4,9 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import {
-    Car as CarIcon, MapPin, Play, Square, Trophy, Satellite, Camera, Siren,
+    Car as CarIcon, MapPin, Play, Square, Trophy, Satellite, Camera, Siren, Moon,
 } from "lucide-react";
+import TunnelHUD from "@/components/TunnelHUD";
 import { motion, AnimatePresence } from "framer-motion";
 import { Car, Weather, GhostRun, GhostPoint, WEATHER_INFO, STORAGE_KEYS, LatLng, UserRoute } from "../lib/types";
 import { addRewards } from "../lib/profile";
@@ -21,6 +22,23 @@ type HazardAlert = {
     distM: number;
     maxspeed?: string;
 };
+
+type GhostProfile = {
+    cum: number[]; // cumulative distance (km) along the ghost
+    times: number[]; // timestamps (ms) at each point
+};
+
+// Time the best ghost needed to reach distance `d` km (linear interpolation)
+function ghostTimeAtDistance(bg: GhostProfile, d: number): number {
+    const { cum, times } = bg;
+    const n = cum.length;
+    if (d >= cum[n - 1]) return times[n - 1];
+    let i = 1;
+    while (i < n - 1 && cum[i] < d) i++;
+    const span = cum[i] - cum[i - 1] || 1e-9;
+    const f = (d - cum[i - 1]) / span;
+    return times[i - 1] + f * (times[i] - times[i - 1]);
+}
 
 const RunMapView = dynamic(() => import("./RunMapView"), {
     ssr: false,
@@ -66,6 +84,12 @@ export default function RunPage() {
     const radarsRef = useRef<Radar[]>([]);
     const spotsRef = useRef<PoliceSpot[]>([]);
 
+    // Tunnel mode + live delta vs best ghost on this touge
+    const [tunnelMode, setTunnelMode] = useState(false);
+    const [ghostDelta, setGhostDelta] = useState<number | null>(null);
+    const bestGhostRef = useRef<GhostProfile | null>(null);
+    const ourDistRef = useRef(0);
+
     // Refs — GPS callbacks live outside React's render cycle, so mutable
     // values must be read from refs, never from captured state.
     const watchIdRef = useRef<number | null>(null);
@@ -87,6 +111,27 @@ export default function RunPage() {
         const currentSpots = loadSpots();
         spotsRef.current = currentSpots;
         setSpots(currentSpots);
+
+        // Best ghost on this touge → live delta reference
+        const candidates = loadGhosts().filter(
+            (g) => g.tougeId === selectedTouge.id && g.points.length >= 2 && g.totalDistance > 0.05
+        );
+        if (candidates.length > 0) {
+            const best = candidates.reduce((a, b) => (a.totalTime <= b.totalTime ? a : b));
+            const cum = [0];
+            for (let i = 1; i < best.points.length; i++) {
+                cum.push(
+                    cum[i - 1] +
+                    distanceKm(
+                        [best.points[i - 1].lat, best.points[i - 1].lng],
+                        [best.points[i].lat, best.points[i].lng]
+                    )
+                );
+            }
+            bestGhostRef.current = { cum, times: best.points.map((p) => p.timestamp) };
+        } else {
+            bestGhostRef.current = null;
+        }
 
         const bbox = routeBBox(selectedTouge.routeGeometry?.length ? selectedTouge.routeGeometry : selectedTouge.points);
         if (bbox) {
@@ -157,9 +202,12 @@ export default function RunPage() {
         setElapsedTime(0);
         setCurrentSpeed(0);
         setMaxSpeed(0);
+        setGhostDelta(null);
         pointsRef.current = [];
         lastPointRef.current = null;
         maxSpeedRef.current = 0;
+        ourDistRef.current = 0;
+        alertedRef.current.clear();
         startTimeRef.current = Date.now();
         setIsRecording(true);
 
@@ -197,6 +245,15 @@ export default function RunPage() {
                 }
             }
 
+            // Live delta vs best ghost at the same distance along the run
+            if (last) {
+                ourDistRef.current += distanceKm([last.lat, last.lng], [latitude, longitude]);
+            }
+            const bg = bestGhostRef.current;
+            if (bg && ourDistRef.current > 0.08) {
+                setGhostDelta(timestamp - ghostTimeAtDistance(bg, ourDistRef.current));
+            }
+
             lastPointRef.current = newPoint;
             pointsRef.current = [...pointsRef.current, newPoint];
             setCurrentPosition([latitude, longitude]);
@@ -219,6 +276,7 @@ export default function RunPage() {
     const stopRun = () => {
         stopWatchers();
         setIsRecording(false);
+        setTunnelMode(false);
 
         const points = pointsRef.current;
         const totalTime = Date.now() - startTimeRef.current;
@@ -467,15 +525,23 @@ export default function RunPage() {
                         </div>
 
                         <div className="text-center flex-1">
-                            <div className="mono-num text-4xl md:text-5xl font-bold text-gold [text-shadow:0_0_24px_rgba(255,194,51,0.35)]">
+                            <div className="mono-num text-4xl md:text-5xl font-bold text-gold [text-shadow:0_0_24px_rgba(240,164,60,0.35)]">
                                 {formatTime(elapsedTime)}
                             </div>
-                            {isRecording && (
-                                <div className="flex items-center justify-center gap-1.5 mt-1 text-red-400 label text-red-400!">
-                                    <span className="w-1.5 h-1.5 rounded-full bg-red-500 pulse-dot" />
-                                    Rec
-                                </div>
-                            )}
+                            <div className="flex items-center justify-center gap-3 mt-1">
+                                {isRecording && (
+                                    <span className="flex items-center gap-1.5 label text-red-400!">
+                                        <span className="w-1.5 h-1.5 rounded-full bg-red-500 pulse-dot" />
+                                        Rec
+                                    </span>
+                                )}
+                                {ghostDelta !== null && (
+                                    <span className={`mono-num text-sm font-bold ${ghostDelta <= 0 ? "text-mint" : "text-flame"}`}>
+                                        {ghostDelta >= 0 ? "+" : "−"}{(Math.abs(ghostDelta) / 1000).toFixed(1)}s
+                                        <span className="text-zinc-600 ml-1">ghost</span>
+                                    </span>
+                                )}
+                            </div>
                         </div>
 
                         <div className="text-center w-16 md:w-24 border-l border-line pl-3">
@@ -486,6 +552,19 @@ export default function RunPage() {
                     </div>
                 </div>
             </motion.div>
+
+            {/* ===== TUNNEL MODE TOGGLE ===== */}
+            {isRecording && !tunnelMode && (
+                <motion.button
+                    initial={{ x: 30, opacity: 0 }}
+                    animate={{ x: 0, opacity: 1 }}
+                    onClick={() => setTunnelMode(true)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 z-[500] hud rounded-xl! p-3.5 flex flex-col items-center gap-1 text-haze hover:bg-haze hover:text-black transition-colors"
+                >
+                    <Moon size={19} />
+                    <span className="text-[9px] font-display font-semibold uppercase tracking-widest">Tunnel</span>
+                </motion.button>
+            )}
 
             {/* ===== BOTTOM CONTROLS ===== */}
             <motion.div
@@ -507,6 +586,26 @@ export default function RunPage() {
                     </Btn>
                 )}
             </motion.div>
+
+            {/* ===== TUNNEL MODE ===== */}
+            <AnimatePresence>
+                {tunnelMode && !runRewards && (
+                    <TunnelHUD
+                        elapsedTime={elapsedTime}
+                        currentSpeed={currentSpeed}
+                        maxSpeed={maxSpeed}
+                        ghostDelta={ghostDelta}
+                        hazard={hazardAlert}
+                        gpsAccuracy={gpsAccuracy}
+                        gpsError={gpsError}
+                        isRecording={isRecording}
+                        pointsCount={gpsPoints.length}
+                        tougeName={selectedTouge?.name ?? ""}
+                        onStop={stopRun}
+                        onExit={() => setTunnelMode(false)}
+                    />
+                )}
+            </AnimatePresence>
 
             {/* ===== SUMMARY MODAL ===== */}
             <AnimatePresence>

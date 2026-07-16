@@ -340,6 +340,85 @@ body {
     cursor: crosshair !important;
 }
 
+/* ============================================================
+   Tunnel mode (night run HUD)
+   ============================================================ */
+
+@keyframes tunnel-scroll {
+    from {
+        background-position-y: 0;
+    }
+
+    to {
+        background-position-y: 260px;
+    }
+}
+
+.tunnel-rail {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 15vw;
+    max-width: 120px;
+    pointer-events: none;
+    background-image: repeating-linear-gradient(180deg,
+            transparent 0px 84px,
+            rgba(111, 214, 234, 0.10) 84px 90px,
+            rgba(111, 214, 234, 0.55) 90px 100px,
+            rgba(111, 214, 234, 0.10) 100px 106px,
+            transparent 106px 260px);
+    animation: tunnel-scroll linear infinite;
+    filter: blur(0.5px);
+}
+
+.tunnel-rail--left {
+    left: 0;
+    mask-image: linear-gradient(90deg, black 20%, transparent);
+    transform: skewY(6deg) scaleX(-1);
+}
+
+.tunnel-rail--right {
+    right: 0;
+    mask-image: linear-gradient(-90deg, black 20%, transparent);
+    transform: skewY(6deg);
+}
+
+/* Overhead fluorescent strip */
+.tunnel-ceiling {
+    position: absolute;
+    top: 0;
+    left: 15%;
+    right: 15%;
+    height: 8px;
+    pointer-events: none;
+    background-image: repeating-linear-gradient(90deg,
+            transparent 0 120px,
+            rgba(242, 240, 232, 0.35) 120px 180px,
+            transparent 180px 300px);
+    animation: tunnel-ceiling-scroll linear infinite;
+    filter: blur(1px);
+}
+
+@keyframes tunnel-ceiling-scroll {
+    from {
+        background-position-x: 0;
+    }
+
+    to {
+        background-position-x: -300px;
+    }
+}
+
+/* Road glow at the vanishing point */
+.tunnel-road {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background:
+        radial-gradient(60% 35% at 50% 100%, rgba(216, 79, 196, 0.10), transparent 70%),
+        radial-gradient(35% 22% at 50% 92%, rgba(242, 240, 232, 0.05), transparent 70%);
+}
+
 @keyframes speedline {
     0% {
         transform: translateX(-100%);
