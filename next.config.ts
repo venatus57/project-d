@@ -12,6 +12,10 @@ const nextConfig: NextConfig = {
   images: {
     unoptimized: true,
   },
+  env: {
+    // Stamped at build time — shown in the footer so stale PWA caches are obvious
+    NEXT_PUBLIC_BUILD: new Date().toISOString().slice(0, 16).replace("T", " "),
+  },
 };
 
 export default withSerwist(nextConfig);

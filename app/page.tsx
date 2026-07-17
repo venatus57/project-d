@@ -224,7 +224,7 @@ export default function Home() {
         className="mt-12 md:mt-16 flex items-center justify-center gap-3 text-zinc-600"
       >
         <span className="w-2 h-2 rounded-full bg-accent pulse-dot shadow-[0_0_10px_rgba(216,79,196,0.8)]" />
-        <span className="label">Shutoko network — Online</span>
+        <span className="label">Shutoko network — Online · build {process.env.NEXT_PUBLIC_BUILD}</span>
       </motion.footer>
     </div>
   );
